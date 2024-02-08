@@ -1,8 +1,6 @@
 
 import React from 'react';
 import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
-import CampaignCard from '../../components/CampaignCard';
 import ActivityFeed from '../../components/ActivityFeed';
 
 const Page = () => {
