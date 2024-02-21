@@ -1,26 +1,28 @@
+'use client'
+import React, { useState, useEffect } from 'react';
+import Test from '../test/page'; // Assurez-vous que le chemin est correct
+import Login from './LoginForm'; // Assurez-vous que le chemin est correct et que le composant s'appelle Login
 
-import React from 'react';
-import Sidebar from '../../components/Sidebar';
-import ActivityFeed from '../../components/ActivityFeed';
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-const Page = () => {
-  return (
-    <div className="bg-gray-900 text-white min-h-screen flex">
-      <div className="fixed inset-y-0 left-0 z-20 w-64">
-        <Sidebar />
-      </div>
-      <div className="flex flex-col flex-1 ml-64">
-        <main className="p-4 lg:p-8 flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-            
-            <ActivityFeed />
+  useEffect(() => {
+    // Ici, vous pouvez vérifier si l'utilisateur est connecté, par exemple en vérifiant un token dans localStorage
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
-            
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+  const handleLogin = async (username, password) => {
+    // Logique pour tenter de se connecter...
+    // Si la connexion est réussie:
+    setIsLoggedIn(true);
+    localStorage.setItem('userToken', 'yourTokenHere'); // Stockez le token ou un indicateur de connexion
+  };
+
+  // Si l'utilisateur est connecté, affichez le composant Test, sinon affichez le composant Login
+  return isLoggedIn ? <Test /> : <Login onLogin={handleLogin} />;
 };
 
-export default Page;
+export default App;
