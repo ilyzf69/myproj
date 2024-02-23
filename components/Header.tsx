@@ -5,7 +5,7 @@ export default function Header() {
   return (
     <div className="bg-gray-800 p-4 overflow-hidden relative">
       <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap text-yellow-300">
-        infected by jukx
+        Feels IA by Ilyes Paul
       </div>
       <style>{`
         @keyframes marquee {
