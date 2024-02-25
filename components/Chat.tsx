@@ -11,26 +11,26 @@ const ChatPopup = () => {
     },
   ]);
 
+  // Fonction pour envoyer le message et recevoir la réponse du chatbot
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim()) return; // Éviter l'envoi de messages vides
     const newMessage = { text: input, sender: "user" };
-    setMessages([...messages, newMessage]);
-    setInput("");
+    setMessages((prev) => [...prev, newMessage]); // Ajouter le message de l'utilisateur
+    setInput(""); // Réinitialiser l'input
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch('/api/chat', { // Assurez-vous que l'URL est correcte
         method: "POST",
         body: JSON.stringify({ prompt: input }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
+
       if (res.ok) {
         const { content, role } = await res.json();
-        setMessages((prevMessages) => [...prevMessages, { text: content, sender: role }]);
+        setMessages((prev) => [...prev, { text: content, sender: role }]); // Ajouter la réponse du chatbot
       }
     } catch (e) {
-      console.error(e);
+      console.error(e); // Gestion des erreurs
     }
   };
 
