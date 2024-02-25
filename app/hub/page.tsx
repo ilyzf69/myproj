@@ -1,7 +1,8 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import Test from '../test/page'; // Assurez-vous que le chemin est correct
-import Login from './LoginForm'; // Assurez-vous que le chemin est correct et que le composant s'appelle Login
+import React, { useEffect, useState } from 'react';
+import Hub from '../hub/pages/hub/page';
+import Login from '../login/page';
+
 import { auth } from '../firebaseConfig'; // import Login from '../login/page';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -20,8 +21,25 @@ const App = () => {
     return () => unsubscribe(); // Nettoyer l'abonnement
   }, []);
 
-  // Si l'utilisateur est connecté, affichez le composant Test, sinon affichez le composant Login
-  return isLoggedIn ? <Test /> : <Login/>;
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log('Connecté avec succès');
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Échec de la connexion', error.message);
+        alert('Échec de la connexion : ' + error.message);
+      } else {
+        // Si l'erreur n'est pas une instance de Error, elle reste de type 'unknown'
+        console.error('Une erreur inconnue est survenue');
+        alert('Une erreur inconnue est survenue');
+      }
+    }
+  };
+  
+
+  return isLoggedIn ? <Hub /> : <Login />;
+
 };
 
 export default App;

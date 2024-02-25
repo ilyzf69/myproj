@@ -1,10 +1,13 @@
+// LoginForm.tsx
+
+
 
 
 
 // LoginForm.tsx
 
 'use client';
-import Hub from '../hub/pages/hub/page';
+import Test from '../test/page';
 import React, { useState } from 'react';
 
 
@@ -21,18 +24,17 @@ const LoginForm: React.FC = () => {
   const [error, setError] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setError(''); // Réinitialiser l'erreur à chaque soumission
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-     setShowConfirmation(true);
-      console.log('Connexion réussie');
-      window.location.href = "/hub";
-    } catch (error) {
+        await signInWithEmailAndPassword(auth, email, password);
+        setShowConfirmation(true);
+        setTimeout(() => {
+          window.location.href = "/hub";
+        }, 3000);
+      } catch (error) {
       if (error instanceof Error) {
         setError(error.message); // Afficher le message d'erreur de Firebase
       } else {
@@ -49,7 +51,7 @@ const LoginForm: React.FC = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 overflow-hidden z-50">
         <div className="m-auto bg-white p-5 rounded-lg flex flex-col items-center">
           <CheckCircleIcon className="h-16 w-16 text-green-500" />
-          <h3 className="mt-2 text-lg font-semibold">Inscription réussie!</h3>
+          <h3 className="mt-2 text-lg font-semibold">Connexion réussie!</h3>
           <p>Redirection vers l'accueil...</p>
         </div>
       </div>
@@ -58,7 +60,7 @@ const LoginForm: React.FC = () => {
 
 <div className="fixed inset-0 bg-black bg-opacity-50 overflow-hidden z-0">
       <div className="absolute inset-0 filter blur-lg">
-        <Hub />
+        <Test />
       </div>
     </div>
 
