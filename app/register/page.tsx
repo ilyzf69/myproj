@@ -45,7 +45,7 @@ const Register: React.FC = () => {
           <div className="m-auto bg-white p-5 rounded-lg flex flex-col items-center">
             <CheckCircleIcon className="h-16 w-16 text-green-500" />
             <h3 className="mt-2 text-lg font-semibold">Inscription réussie!</h3>
-            <p>Redirection vers l'accueil...</p>
+            <p>Redirection vers le hub...</p>
           </div>
         </div>
       )}
@@ -59,7 +59,7 @@ const Register: React.FC = () => {
 
       <div className="flex items-center justify-center min-h-screen z-10">
         <div className="px-8 py-6 text-left bg-gray-800 text-white shadow-lg" style={{ zIndex: 20 }}>
-          <h3 className="text-2xl font-bold text-center">S'inscrire</h3>
+          <h3 className="text-2xl font-bold text-center">Inscription</h3>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <form onSubmit={handleSubmit}>
             <div className="mt-4">
@@ -77,7 +77,7 @@ const Register: React.FC = () => {
               </div>
               <div className="flex items-center justify-between mt-4">
                 <button className="px-6 py-2 leading-5 text-white transition-colors duration-200 transform bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:bg-blue-700" type="submit">
-                  S'inscrire
+                  Inscription
                 </button>
               </div>
             </div>

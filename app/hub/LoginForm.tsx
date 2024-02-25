@@ -50,7 +50,7 @@ const LoginForm: React.FC = () => {
         <div className="m-auto bg-white p-5 rounded-lg flex flex-col items-center">
           <CheckCircleIcon className="h-16 w-16 text-green-500" />
           <h3 className="mt-2 text-lg font-semibold">Inscription réussie!</h3>
-          <p>Redirection vers l'accueil...</p>
+          <p>Redirection vers le hub...</p>
         </div>
       </div>
     )}
