@@ -68,14 +68,6 @@ export default function Sidebar() {
           <span>Playlists</span>
 
         </Link>
-
-        <Link href="/chatbot" className="flex items-center gap-3 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700">
-
-          <ChatAlt2Icon className="h-6 w-6" />
-          <span>Chatbot</span>
-
-        </Link>
-
         <div className="mt-auto"> {/* Met le bouton de déconnexion tout en bas */}
         <Link href="/"  className="mt-auto flex items-center gap-3 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700">
           <LogoutIcon className="h-6 w-6" />

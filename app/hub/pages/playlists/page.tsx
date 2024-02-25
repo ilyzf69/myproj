@@ -1,5 +1,6 @@
 import Sidebar from '../../../../components/Sidebar'; // Ajustez le chemin selon la structure de votre projet
 import Link from 'next/link';
+import ChatPopup from '../../../../components/Chat';
 
 const PlaylistsPage: React.FC = () => {
     return (
@@ -19,6 +20,7 @@ const PlaylistsPage: React.FC = () => {
               </p>
             </Link>
           </div>
+          <ChatPopup/>
         </div>
       );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Header from '../../../../components/Header';
 import ActivityFeed from '../../../../components/ActivityFeed';
+import ChatPopup from '../../../../components/Chat';
 
 const Hub = () => {
   return (
@@ -26,6 +27,7 @@ const Hub = () => {
       </div>
     </main>
   </div>
+  <ChatPopup/>
 </div>
 
 

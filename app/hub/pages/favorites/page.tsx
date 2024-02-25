@@ -1,5 +1,6 @@
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
+import ChatPopup from '../../../../components/Chat';
 
 const FavoritesPage: React.FC = () => {
     return (
@@ -16,6 +17,7 @@ const FavoritesPage: React.FC = () => {
               </p>
             </Link>
           </div>
+          <ChatPopup/>
         </div>
       );
 };

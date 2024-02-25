@@ -1,5 +1,6 @@
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
+import ChatPopup from '../../../../components/Chat';
 
 const MoodsPage: React.FC = () => {
     return (
@@ -18,6 +19,7 @@ const MoodsPage: React.FC = () => {
             </Link>
             
           </div>
+          <ChatPopup/>
         </div>
       );
 };
