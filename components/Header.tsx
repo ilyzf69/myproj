@@ -3,9 +3,9 @@ import React from 'react';
 
 export default function Header() {
   return (
-    <div className="bg-gray-800 p-4 overflow-hidden relative">
+    <div className="bg-gray-800 p-4 rounded-xl shadow-lg overflow-hidden relative">
       <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap text-yellow-300">
-        Feels IA by Ilyes Paul
+        FeelsIA by Paul-Ilyes
       </div>
       <style>{`
         @keyframes marquee {
