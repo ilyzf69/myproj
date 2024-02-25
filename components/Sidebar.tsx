@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { MusicNoteIcon, EmojiHappyIcon, SearchIcon, HeartIcon, LogoutIcon } from '@heroicons/react/solid';
+import { MusicNoteIcon, EmojiHappyIcon, SearchIcon, HeartIcon, LogoutIcon, ChatAlt2Icon } from '@heroicons/react/solid';
 import { auth } from '../app/firebaseConfig';
 import logoImage from '../image/test.png';
 
@@ -66,6 +66,13 @@ export default function Sidebar() {
 
           <MusicNoteIcon className="h-6 w-6" />
           <span>Playlists</span>
+
+        </Link>
+
+        <Link href="/chatbot" className="flex items-center gap-3 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700">
+
+          <ChatAlt2Icon className="h-6 w-6" />
+          <span>Chatbot</span>
 
         </Link>
 

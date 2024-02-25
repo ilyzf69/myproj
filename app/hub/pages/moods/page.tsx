@@ -5,6 +5,7 @@ const MoodsPage: React.FC = () => {
     return (
         <div className="flex h-screen">
           <Sidebar />
+          
           <div className="flex-1 flex flex-col justify-center items-center">
             <div className="text-center">
               <h1 className="text-2xl font-bold">Humeurs</h1>
@@ -15,6 +16,7 @@ const MoodsPage: React.FC = () => {
                 Retour au Hub
               </p>
             </Link>
+            
           </div>
         </div>
       );
