@@ -15,6 +15,7 @@ const App = () => {
       setIsLoggedIn(!!user);
       if (user) {
         console.log('Utilisateur connecté', user);
+        
       }
     });
 
