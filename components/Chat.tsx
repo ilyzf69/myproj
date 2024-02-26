@@ -18,22 +18,7 @@ const ChatPopup = () => {
     setMessages((prev) => [...prev, newMessage]); // Ajouter le message de l'utilisateur
     setInput(""); // Réinitialiser l'input
 
-    try {
-      
-      const res = await fetch('http://localhost:3000/api/chat', { // Assurez-vous que l'URL est correcte
-        method: "POST",
-        body: JSON.stringify({ prompt: input }),
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (res.ok) {
-        const { content, role } = await res.json();
-        setMessages((prev) => [...prev, { text: content, sender: role }]); // Ajouter la réponse du chatbot
-      }
-    } catch (e) {
-      
-      console.error(e); // Gestion des erreurs
-    }
+    
   };
 
   return (
