@@ -1,4 +1,3 @@
-"use client"
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
@@ -27,7 +26,13 @@ const emotions = [
 const MoodsPage: React.FC = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<Emotion | null>(null);
   const [musics, setMusics] = useState<Music[]>([]);
-  const [favorites, setFavorites] = useState<Music[]>(JSON.parse(localStorage.getItem('favorites') || '[]'));
+  const [favorites, setFavorites] = useState<Music[]>([]);
+
+  useEffect(() => {
+    // Charger les favoris du localStorage uniquement côté client
+    const savedFavorites = JSON.parse(window.localStorage.getItem('favorites') || '[]');
+    setFavorites(savedFavorites);
+  }, []);
 
   useEffect(() => {
     if (selectedEmotion) {
@@ -36,7 +41,8 @@ const MoodsPage: React.FC = () => {
   }, [selectedEmotion]);
 
   useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
+    // Sauvegarder les favoris dans le localStorage uniquement côté client
+    window.localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   const fetchTracks = async (emotion: Emotion) => {
