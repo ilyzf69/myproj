@@ -9,31 +9,36 @@ type Music = {
   id: string;
   title: string;
   thumbnailUrl: string;
-  emotion: string; // Ajouté pour gérer l'émotion
+  emotion: string;
   isFavorite?: boolean;
 };
 
 const FavoritesPage: React.FC = () => {
-  const [favorites, setFavorites] = useState<Music[]>(JSON.parse(localStorage.getItem('favorites') || '[]'));
+  const [favorites, setFavorites] = useState<Music[]>([]);
+
+  useEffect(() => {
+    // Initialiser les favoris à partir de localStorage seulement côté client
+    if (typeof window !== "undefined") {
+      const storedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      setFavorites(storedFavorites);
+    }
+  }, []);
 
   const removeFavorite = (id: string) => {
     const updatedFavorites = favorites.filter(music => music.id !== id);
     setFavorites(updatedFavorites);
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    if (typeof window !== "undefined") {
+      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    }
   };
 
   const getEmoji = (emotion: string) => {
     switch (emotion) {
-      case '❤️':
-        return '❤️';
-      case '😀':
-        return '😀';
-      case '😢':
-        return '😢';
-      case '⚡':
-        return '⚡';
-      default:
-        return '';
+      case '❤️': return '❤️';
+      case '😀': return '😀';
+      case '😢': return '😢';
+      case '⚡': return '⚡';
+      default: return '';
     }
   };
 
