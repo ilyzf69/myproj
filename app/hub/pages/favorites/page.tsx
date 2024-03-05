@@ -1,25 +1,74 @@
+"use client"
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
+import { HeartIcon } from '@heroicons/react/outline';
+
+type Music = {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  emotion: string; // Ajouté pour gérer l'émotion
+  isFavorite?: boolean;
+};
 
 const FavoritesPage: React.FC = () => {
-    return (
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col justify-center items-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold">Favoris</h1>
-              <p className="mt-2 text-lg">Retrouvez vos contenus favoris.</p>
-            </div>
-            <Link href="/hub">
-              <p className="mt-10 p-4 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 transition duration-300 ease-in-out flex items-center justify-center">
-                Retour au Hub
-              </p>
-            </Link>
+  const [favorites, setFavorites] = useState<Music[]>(JSON.parse(localStorage.getItem('favorites') || '[]'));
+
+  const removeFavorite = (id: string) => {
+    const updatedFavorites = favorites.filter(music => music.id !== id);
+    setFavorites(updatedFavorites);
+    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  };
+
+  const getEmoji = (emotion: string) => {
+    switch (emotion) {
+      case '❤️':
+        return '❤️';
+      case '😀':
+        return '😀';
+      case '😢':
+        return '😢';
+      case '⚡':
+        return '⚡';
+      default:
+        return '';
+    }
+  };
+
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex-1 flex flex-col justify-center items-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Favoris</h1>
+          <p className="mt-2 text-lg">Retrouvez vos contenus favoris.</p>
+          <div>
+            {favorites.map((music) => (
+              <div key={music.id} className="flex items-center mt-2">
+                <span>{getEmoji(music.emotion)}</span>
+                <a href={`https://www.youtube.com/watch?v=${music.id}`} target="_blank" rel="noopener noreferrer">
+                  {music.title}
+                </a>
+                <img src={music.thumbnailUrl} alt={music.title} />
+                <HeartIcon 
+                  className="ml-2 h-6 w-6 text-red-500 cursor-pointer" 
+                  onClick={() => removeFavorite(music.id)} 
+                />
+              </div>
+            ))}
           </div>
-          <ChatPopup/>
         </div>
-      );
+        <Link href="/hub">
+          <p className="mt-10 p-4 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 transition duration-300 ease-in-out flex items-center justify-center">
+            Retour au Hub
+          </p>
+        </Link>
+      </div>
+      <ChatPopup/>
+    </div>
+  );
 };
 
 export default FavoritesPage;

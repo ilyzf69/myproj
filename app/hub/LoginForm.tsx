@@ -1,20 +1,9 @@
-
-
-
-// LoginForm.tsx
-
 'use client';
 import Hub from '../hub/pages/hub/page';
 import React, { useState } from 'react';
-
-
 import { MailIcon, LockClosedIcon, CheckCircleIcon } from '@heroicons/react/solid';
-
-// Assurez-vous d'avoir initialisé Firebase ailleurs dans votre application
-// Importez la fonction de connexion depuis Firebase Auth
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig'; // Mettez à jour avec le chemin vers votre configuration Firebase
-
+import { auth } from '../firebaseConfig';
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +15,7 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setError(''); // Réinitialiser l'erreur à chaque soumission
+    setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
      setShowConfirmation(true);
@@ -34,7 +23,7 @@ const LoginForm: React.FC = () => {
       window.location.href = "/hub";
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message); // Afficher le message d'erreur de Firebase
+        setError(error.message);
       } else {
         setError('Une erreur est survenue lors de la connexion.');
       }

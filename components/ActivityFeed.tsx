@@ -1,9 +1,12 @@
 'use client'
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface Track {
+  id: string;
   title: string;
-  artist: string;
+  channelTitle: string;
+  thumbnailUrl: string;
 }
 
 export default function MusicApp() {
@@ -11,15 +14,34 @@ export default function MusicApp() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchTracks();
-  }, []);
+    if (searchTerm) {
+      fetchTracks();
+    }
+  }, [searchTerm]);
 
   const fetchTracks = async () => {
-    const fetchedTracks: Track[] = [
-      { title: 'Track 1', artist: 'Artist 1' },
-      { title: 'Track 2', artist: 'Artist 2' },
-    ];
-    setTracks(fetchedTracks);
+    try {
+      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+        params: {
+          part: 'snippet',
+          maxResults: 10,
+          q: searchTerm,
+          type: 'video',
+          key: 'AIzaSyCw3tcO0cLDtoM-PeixLqQX2NQ5HTiIqyw',
+        },
+      });
+
+      const fetchedTracks = response.data.items.map((item: { id: { videoId: any; }; snippet: { title: any; channelTitle: any; thumbnails: { default: { url: any; }; }; }; }) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        channelTitle: item.snippet.channelTitle,
+        thumbnailUrl: item.snippet.thumbnails.default.url,
+      }));
+
+      setTracks(fetchedTracks);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,9 +60,10 @@ export default function MusicApp() {
         />
       </div>
       <div className="track-list">
-        {tracks.map((track, index) => (
-          <div key={index} className="track-item p-4 my-4 rounded-lg bg-blue-700 text-white">
-            <p className="font-bold">{track.title} - {track.artist}</p>
+        {tracks.map((track) => (
+          <div key={track.id} className="track-item p-4 my-4 rounded-lg bg-blue-700 text-white">
+            <p className="font-bold">{track.title} - {track.channelTitle}</p>
+            <img src={track.thumbnailUrl} alt={track.title} style={{ width: '100px', height: 'auto' }} />
           </div>
         ))}
       </div>

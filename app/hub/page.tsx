@@ -1,4 +1,4 @@
-
+'use client'
 import React, { useEffect, useState } from 'react';
 import Hub from '../hub/pages/hub/page';
 import Login from '../login/page';

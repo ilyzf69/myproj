@@ -3,9 +3,8 @@ import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
 import { useState } from 'react';
-import Moods from './moods';
 import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon, MusicNoteIcon, FireIcon, ThumbUpIcon } from '@heroicons/react/solid';
-import { Emotion } from './moods';
+
 
 
 
@@ -23,6 +22,13 @@ const MoodIcon: React.FC<MoodIconProps> = ({ icon: Icon, onClick }) => (
   </button>
 );
 
+const emotions = [
+  { icon: '❤️', name: 'Amour', query: 'love songs' },
+  { icon: '😀', name: 'Joyeux', query: 'happy songs' },
+  { icon: '😢', name: 'Triste', query: 'sad songs' },
+  { icon: '⚡', name: 'Énergique', query: 'energetic songs' },
+];
+
 const MoodsPage: React.FC = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<string>('');
 
@@ -33,19 +39,21 @@ const MoodsPage: React.FC = () => {
   return (
     <div className="flex h-screen">
       <Sidebar />
+      
       <div className="flex-1 flex flex-col items-center">
         <div className="flex justify-center mt-5">
-        <MoodIcon icon={HeartIcon} onClick={() => handleEmotionSelect('❤️')} />
-<MoodIcon icon={EmojiHappyIcon} onClick={() => handleEmotionSelect('😀')} />
-<MoodIcon icon={EmojiSadIcon} onClick={() => handleEmotionSelect('😢')} />
-<MoodIcon icon={LightningBoltIcon} onClick={() => handleEmotionSelect('⚡')} />
-<MoodIcon icon={MusicNoteIcon} onClick={() => handleEmotionSelect('🎵')} />
-<MoodIcon icon={FireIcon} onClick={() => handleEmotionSelect('🔥')} />
-<MoodIcon icon={ThumbUpIcon} onClick={() => handleEmotionSelect('👍')} />
+        <div className="mt-10">
+          <div className="flex justify-center mt-4 flex-wrap">
+            {emotions.map(({ icon, name }) => (
+              <button key={icon} onClick={() => handleEmotionSelect(icon)} className={`m-2 p-2 rounded ${selectedEmotion === icon ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                {icon} {name}
+              </button>
+            ))}
+          </div>
+        </div>
 
         </div>
 
-        {selectedEmotion && <Moods emotion={selectedEmotion as Emotion} />}
 
 
         <Link href="/hub">
