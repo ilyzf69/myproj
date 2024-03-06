@@ -82,7 +82,7 @@ const MoodsPage: React.FC = () => {
           maxResults: 5,
           q: emotionQuery,
           type: 'playlist',
-          key: 'AIzaSyCw3tcO0cLDtoM-PeixLqQX2NQ5HTiIqyw',
+          key: 'AIzaSyBu2Nefj0UMltKDqNWBT5uwcJwv9nnAZqo',
         },
       });
 
