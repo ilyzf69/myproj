@@ -51,39 +51,74 @@ const Register: React.FC = () => {
       )}
 
 
-<div className="fixed inset-0 bg-black bg-opacity-50 overflow-hidden z-0">
-        <div className="absolute inset-0 filter blur-lg">
-          <Hub />
-        </div>
-      </div>
+<div className="fixed inset-0 overflow-hidden z-0">
+  <iframe
+    className="absolute inset-0 w-full h-full"
+    style={{ filter: 'blur(8px)' }}
+    src="https://www.youtube.com/embed/lR9a4fgegi4?controls=0&showinfo=0&rel=0&autoplay=1&loop=1&playlist=lR9a4fgegi4&mute=1"
+    frameBorder="0"
+    allow="autoplay; encrypted-media"
+    allowFullScreen
+    title="Video Background"
+  ></iframe>
+  <div className="absolute inset-0 bg-black bg-opacity-50"></div> 
+</div>
 
-      <div className="flex items-center justify-center min-h-screen z-10">
-        <div className="px-8 py-6 text-left bg-gray-800 text-white shadow-lg" style={{ zIndex: 20 }}>
-          <h3 className="text-2xl font-bold text-center">Inscription</h3>
-          {error && <p className="text-red-500 text-xs">{error}</p>}
-          <form onSubmit={handleSubmit}>
-            <div className="mt-4">
-              <div className="flex items-center border-2 py-2 px-3 rounded-2xl mb-4 bg-gray-700">
-                <MailIcon className="h-5 w-5 text-gray-300" />
-                <input className="pl-2 outline-none border-none bg-transparent text-white" type="email" name="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div className="flex items-center border-2 py-2 px-3 rounded-2xl bg-gray-700">
-                <LockClosedIcon className="h-5 w-5 text-gray-300" />
-                <input className="pl-2 outline-none border-none bg-transparent text-white" type="password" name="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </div>
-              <div className="flex items-center border-2 py-2 px-3 rounded-2xl bg-gray-700">
-                <LockClosedIcon className="h-5 w-5 text-gray-300" />
-                <input className="pl-2 outline-none border-none bg-transparent text-white" type="password" name="confirmPassword" placeholder="Confirmer le mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-              </div>
-              <div className="flex items-center justify-between mt-4">
-                <button className="px-6 py-2 leading-5 text-white transition-colors duration-200 transform bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:bg-blue-700" type="submit">
-                  Inscription
-                </button>
-              </div>
-            </div>
-          </form>
+<div className="flex items-center justify-center min-h-screen z-10 bg-black bg-opacity-50">
+  <div className="px-8 py-6 text-left bg-gray-800 text-white shadow-xl rounded-lg" style={{ zIndex: 20 }}>
+    <h3 className="text-2xl font-bold text-center">Inscription</h3>
+    {error && <p className="text-red-500 text-xs">{error}</p>}
+    <form onSubmit={handleSubmit}>
+      <div className="mt-4">
+        <label className="block relative" htmlFor="email">
+          <MailIcon className="h-5 w-5 text-gray-300 absolute left-3 top-3" />
+          <input
+            className="form-input mt-1 block w-full pl-10 pr-4 py-2 bg-gray-700 border-none rounded-md"
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label className="block mt-4 relative" htmlFor="password">
+          <LockClosedIcon className="h-5 w-5 text-gray-300 absolute left-3 top-3" />
+          <input
+            className="form-input mt-1 block w-full pl-10 pr-4 py-2 bg-gray-700 border-none rounded-md"
+            type="password"
+            name="password"
+            placeholder="Mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
+        <label className="block mt-4 relative" htmlFor="confirmPassword">
+          <LockClosedIcon className="h-5 w-5 text-gray-300 absolute left-3 top-3" />
+          <input
+            className="form-input mt-1 block w-full pl-10 pr-4 py-2 bg-gray-700 border-none rounded-md"
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirmer le mot de passe"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+        </label>
+        <div className="flex items-center justify-between mt-4">
+          <button
+            className="px-6 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:outline-none rounded transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-110"
+            type="submit"
+          >
+            Inscription
+          </button>
         </div>
       </div>
+    </form>
+  </div>
+</div>
+
     </>
   );
 };

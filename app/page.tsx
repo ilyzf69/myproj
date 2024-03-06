@@ -13,11 +13,22 @@ const Page = () => {
 
   return (
     <>
-    <div className="fixed inset-0 bg-black bg-opacity-50 overflow-hidden z-0">
-      <div className="absolute inset-0 filter blur-lg">
-        <Hub />
-      </div>
-    </div>
+    <div className="fixed inset-0 overflow-hidden z-0">
+  <iframe
+    className="absolute inset-0 w-full h-full"
+    style={{ filter: 'blur(8px)' }}
+    src="https://www.youtube.com/embed/lR9a4fgegi4?controls=0&showinfo=0&rel=0&autoplay=1&loop=1&playlist=lR9a4fgegi4&mute=1"
+    frameBorder="0"
+    allow="autoplay; encrypted-media"
+    allowFullScreen
+    title="Video Background"
+  ></iframe>
+  <div className="absolute inset-0 bg-black bg-opacity-50"></div> 
+</div>
+
+
+
+
     <div className="bg-gray-900 text-white min-h-screen flex flex-col z-10">
       <Header />
       <main className="flex-1 flex flex-col items-center justify-center">
