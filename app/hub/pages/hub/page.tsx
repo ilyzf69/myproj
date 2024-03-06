@@ -1,70 +1,66 @@
+"use client"
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import ActivityFeed from '../../../../components/ActivityFeed';
 import ChatPopup from '../../../../components/Chat';
 import { auth, db } from '../../../firebaseConfig';
-import { getDoc, doc } from 'firebase/firestore';
+import { getDoc, doc, setDoc } from 'firebase/firestore';
+import { EmojiHappyIcon, EmojiSadIcon, HeartIcon, LightningBoltIcon } from '@heroicons/react/solid';
+import { onAuthStateChanged } from 'firebase/auth';
+import HappyVideo from '../../../videos/HappyVideo';
+import SadVideo from '../../../videos/SadVideo';
+import LoveVideo from '../../../videos/LoveVideo';
+import EnergeticVideo from '../../../videos/EnergeticVideo';
+
+const emotions = [
+  { icon: HeartIcon, name: 'Amour', mood: '❤️', video: LoveVideo },
+  { icon: EmojiHappyIcon, name: 'Joyeux', mood: '😀', video: HappyVideo },
+  { icon: EmojiSadIcon, name: 'Triste', mood: '😢', video: SadVideo },
+  { icon: LightningBoltIcon, name: 'Énergique', mood: '⚡', video: EnergeticVideo },
+];
 
 const Hub = () => {
-  const [userMood, setUserMood] = useState('');
-  const [backgroundVideo, setBackgroundVideo] = useState('');
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserMood = async () => {
-      const user = auth.currentUser;
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
-        // Ici vous pouvez récupérer l'humeur de l'utilisateur depuis votre base de données ou toute autre source de données
-        // Par exemple, si vous avez une collection "users" avec un champ "mood", vous pouvez le récupérer comme suit :
-        const userSnapshot = await getDoc(doc(db, 'users', user.uid));
-        // setUserMood(userSnapshot.data().mood);
-        
-        // Pour l'exemple, je vais simuler différentes humeurs
-        const randomMoods = ['happy', 'sad', 'love', 'energetic'];
-        const randomIndex = Math.floor(Math.random() * randomMoods.length);
-        setUserMood(randomMoods[randomIndex]);
+        const docRef = doc(db, "users", user.uid);
+        getDoc(docRef).then(docSnap => {
+          if (docSnap.exists()) {
+            setSelectedEmotion(docSnap.data().mood);
+          } else {
+            console.log("No such document!");
+          }
+        });
       }
-    };
+    });
 
-    fetchUserMood();
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const getBackgroundVideo = () => {
-      switch (userMood) {
-        case 'happy':
-          return '/happy_background.mp4';
-        case 'sad':
-          return '/sad.mp4';
-        case 'love':
-          return '/love_background.mp4';
-        case 'energetic':
-          return '/energetic_background.mp4';
-        default:
-          return '/default_background.mp4';
-      }
-    };
-
-    setBackgroundVideo(getBackgroundVideo());
-  }, [userMood]);
+  const BackgroundVideoComponent = emotions.find(e => e.mood === selectedEmotion)?.video;
 
   return (
     <div className="relative flex h-screen">
-      <video className="absolute inset-0 object-cover w-full h-full" autoPlay loop muted>
-        <source src={backgroundVideo} type="video/mp4" />
-      </video>
-      <div className="fixed inset-y-0 left-0 z-20 w-64 shadow-md">
-        <Sidebar />
+      <div className="absolute inset-0 z-0 ">
+        {BackgroundVideoComponent && <BackgroundVideoComponent />}
       </div>
-      <div className="flex-1 flex flex-col m-auto bg-gray-900 rounded-xl shadow-lg max-w-6xl">
-        <main className="p-4 lg:p-8 flex-1">
-          <div className="flex justify-center items-center flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-              <ActivityFeed />
+      <div className="relative z-10 w-full h-full">
+        <div className="fixed inset-y-0 left-0 z-20 w-64">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex flex-col m-auto bg-gray-900 rounded-xl shadow-lg max-w-6xl">
+          <main className="p-4 lg:p-8 flex-1">
+            <div className="flex justify-center items-center flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+                <ActivityFeed />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
+        <ChatPopup />
       </div>
-      <ChatPopup />
     </div>
   );
 };
