@@ -1,12 +1,9 @@
 'use client'
 
 import React from 'react';
-import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
 import CampaignCard from '../components/CampaignCard';
 import ActivityFeed from '../components/ActivityFeed';
 import { useRouter } from 'next/navigation'
-import Hub from './hub/pages/hub/page';
 
 const Page = () => {
   const router = useRouter()
@@ -30,7 +27,6 @@ const Page = () => {
 
 
     <div className="bg-gray-900 text-white min-h-screen flex flex-col z-10">
-      <Header />
       <main className="flex-1 flex flex-col items-center justify-center">
       <div className="text-center bg-black bg-opacity-20 z-20 rounded-xl p-8">
           <h1 className="text-6xl lg:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">

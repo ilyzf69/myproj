@@ -17,6 +17,10 @@ type Music = {
 // Type pour l'émotion
 type Emotion = '❤️' | '😀' | '😢' | '⚡'; 
 
+
+
+
+
 const emotions = [
   { icon: EmojiHappyIcon, name: 'Amour', query: 'love songs' },
   { icon: EmojiSadIcon, name: 'Joyeux', query: 'happy songs' },
@@ -55,7 +59,7 @@ const MoodsPage: React.FC = () => {
           maxResults: 5,
           q: query,
           type: 'video',
-          key: 'AIzaSyCw3tcO0cLDtoM-PeixLqQX2NQ5HTiIqyw',
+          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk',
         },
       });
 

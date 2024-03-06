@@ -4,9 +4,10 @@ import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
 import axios from 'axios';
-import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon, PlayIcon } from '@heroicons/react/solid';
-import { db } from '../../../firebaseConfig';
-import { collection, doc, setDoc } from "firebase/firestore";
+import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon, TrashIcon, ChevronDownIcon } from '@heroicons/react/solid';
+import { db, auth } from '../../../firebaseConfig';
+import { collection, doc, setDoc, deleteDoc, getDocs, where, query } from "firebase/firestore";
+
 
 type Music = {
   id: string;
@@ -20,6 +21,7 @@ type Emotion = '❤️' | '😀' | '😢' | '⚡';
 
 type Playlist = {
   id: string;
+  userId: string;
   name: string;
   musics: Music[];
 };
@@ -37,10 +39,28 @@ const MoodsPage: React.FC = () => {
   const [favorites, setFavorites] = useState<Music[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [newPlaylistName, setNewPlaylistName] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<Playlist[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState<boolean>(false);
 
   useEffect(() => {
     const savedFavorites = JSON.parse(window.localStorage.getItem('favorites') || '[]');
     setFavorites(savedFavorites);
+
+    const fetchPlaylists = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userPlaylistsQuery = query(collection(db, 'playlists'), where('userId', '==', user.uid));
+        const playlistsSnapshot = await getDocs(userPlaylistsQuery);
+        const fetchedPlaylists: Playlist[] = [];
+        playlistsSnapshot.forEach((doc) => {
+          fetchedPlaylists.push({ id: doc.id, ...doc.data() } as Playlist);
+        });
+        setPlaylists(fetchedPlaylists);
+      }
+    };
+    fetchPlaylists();
   }, []);
 
   useEffect(() => {
@@ -62,7 +82,7 @@ const MoodsPage: React.FC = () => {
           maxResults: 5,
           q: emotionQuery,
           type: 'playlist',
-          key: 'AIzaSyCw3tcO0cLDtoM-PeixLqQX2NQ5HTiIqyw',
+          key: 'YOUR_API_KEY',
         },
       });
 
@@ -71,7 +91,7 @@ const MoodsPage: React.FC = () => {
         title: item.snippet.title,
         thumbnailUrl: item.snippet.thumbnails.default.url,
         isFavorite: favorites.some(f => f.id === item.id.videoId),
-        emotion: selectedEmotion, // Assign emotion to each track
+        emotion: selectedEmotion,
       }));
 
       setMusics(fetchedTracks);
@@ -86,88 +106,167 @@ const MoodsPage: React.FC = () => {
 
   const handleAddPlaylist = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newPlaylistRef = doc(collection(db, 'playlists'));
-    const newPlaylist: Playlist = {
-      id: newPlaylistRef.id,
-      name: newPlaylistName,
-      musics: musics.filter(music => music.isFavorite),
-    };
-  
-    await setDoc(newPlaylistRef, newPlaylist);
-    setPlaylists([...playlists, newPlaylist]);
-    setNewPlaylistName('');
+    const user = auth.currentUser;
+    if (user) {
+      const newPlaylistRef = doc(collection(db, 'playlists'));
+      const newPlaylist: Playlist = {
+        id: newPlaylistRef.id,
+        userId: user.uid,
+        name: newPlaylistName,
+        musics: musics.filter(music => music.isFavorite),
+      };
+    
+      await setDoc(newPlaylistRef, newPlaylist);
+      setPlaylists([...playlists, newPlaylist]);
+      setNewPlaylistName('');
+    }
   };
 
-  const handleEmotionSelection = (emotion: Emotion) => {
-    setSelectedEmotion(selectedEmotion === emotion ? null : emotion);
+  const handleDeletePlaylist = async (playlistId: string) => {
+    await deleteDoc(doc(db, 'playlists', playlistId));
+    setPlaylists(playlists.filter(playlist => playlist.id !== playlistId));
+  };
+
+  const handlePlaylistClick = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
+    setShowPlaylistModal(true);
+  };
+
+  const handleClosePlaylistModal = () => {
+    setSelectedPlaylist(null);
+    setShowPlaylistModal(false);
+  };
+
+  const handleSearch = () => {
+    const results = playlists.filter(playlist => playlist.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    setSearchResults(results);
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="grid gap-4 h-screen">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center p-10">
-        <h1 className="text-4xl font-bold text-green-500 mb-5">Découvrir</h1>
-        <p className="text-xl mb-10">Explorez de nouveaux contenus et tendances.</p>
-        <div className="grid grid-cols-2 gap-5">
-          {emotions.map(({ icon: Icon, name, query }) => (
-            <button
+
+      <div className="flex-1 flex flex-col items-center">
+      <h1 className="text-2xl font-bold text-center mt-10">Quel émotion vous recherchez ?</h1>
+        <div className="flex justify-center space-x-4 mb-8">
+          
+          {emotions.map(({ icon, name }) => (
+            <div
               key={name}
-              onClick={() =>  setSelectedEmotion(name as Emotion)}
-              className={`p-4 rounded-lg flex flex-col items-center justify-center ${
-                selectedEmotion === query ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-              } transition duration-300 ease-in-out`}
+              className={`cursor-pointer ${selectedEmotion === name ? 'border-b-2 border-red-500' : ''}`}
+              onClick={() => setSelectedEmotion(name as Emotion)}
             >
-              <Icon className="w-10 h-10 mb-2" />
-              {name}
-            </button>
+              <p>{name}</p>
+            </div>
           ))}
         </div>
-        <div className="track-list mt-8 overflow-auto max-h-96">
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
           {musics.map(music => (
-            <div key={music.id} className="track-item mb-4">
+            <div key={music.id} className="relative">
               <HeartIcon
-                className={`ml-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+                className={`absolute top-2 right-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
                 onClick={() => toggleFavorite(music)}
               />
-              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2" style={{ width: '100px', height: 'auto' }} />
-              <span>{music.title}</span>
+              <img src={music.thumbnailUrl} alt={music.title} className="w-full h-auto" />
+              <p className="mt-2 text-center">{music.title}</p>
             </div>
           ))}
         </div>
-        <form onSubmit={handleAddPlaylist} className="flex flex-col items-center mt-5">
-          <input
-            type="text"
-            placeholder="Nom de la playlist"
-            value={newPlaylistName}
-            onChange={(e) => setNewPlaylistName(e.target.value)}
-            className="p-2 border-2 border-gray-300 rounded-md"
-          />
-          <button 
-            type="submit" 
-            className="mt-2 p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 ease-in-out"
-          >
-            Créer Playlist
-          </button>
-        </form>
-        <div className="playlist-list mt-8 overflow-auto max-h-96">
-          {playlists.map(playlist => (
-            <div key={playlist.id} className="playlist-item mb-4">
-              <h2 className="text-lg font-semibold">{playlist.name}</h2>
-              {playlist.musics.map(music => (
-                <div key={music.id} className="track-item">
-                  <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2" style={{ width: '100px', height: 'auto' }} />
-                  <span>{music.title}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        <Link href="/hub">
-          <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center">
-            Retour au Hub
-          </p>
-        </Link>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+  {playlists.map(playlist => (
+    <div key={playlist.id} className="relative border border-gray-200 rounded-md p-4">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold truncate">{playlist.name}</h3>
+        <TrashIcon
+          className="h-6 w-6 cursor-pointer text-gray-500"
+          onClick={() => handleDeletePlaylist(playlist.id)}
+        />
       </div>
+      <button
+        className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
+        onClick={() => handlePlaylistClick(playlist)}
+      >
+        Voir Playlist
+      </button>
+    </div>
+  ))}
+</div>
+
+        {showPlaylistModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-8 rounded-lg">
+              <button
+                className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
+                onClick={handleClosePlaylistModal}
+              >
+                <ChevronDownIcon className="h-6 w-6" />
+              </button>
+              <h2 className="text-2xl font-bold mb-4">{selectedPlaylist?.name}</h2>
+              <div className="overflow-auto max-h-96">
+                {selectedPlaylist?.musics.map(music => (
+                  <div key={music.id} className="flex items-center mb-4">
+                    <HeartIcon
+                      className={`mr-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+                      onClick={() => toggleFavorite(music)}
+                    />
+                    <img src={music.thumbnailUrl} alt={music.title} className="w-24 h-auto" />
+                    <p className="ml-2">{music.title}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className='flex justify-center'>
+          <div className="mb-8">
+            <form onSubmit={handleAddPlaylist}>
+              <input
+                type="text"
+                placeholder="Nom de la playlist"
+                value={newPlaylistName}
+                onChange={(e) => setNewPlaylistName(e.target.value)}
+                className="p-2 border-2 border-gray-300 rounded-md"
+              />
+              <button
+                type="submit"
+                className="mt-2 p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
+              >
+                Créer Playlist
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          {searchResults.map(result => (
+            <div key={result.id} className="relative">
+              <TrashIcon
+                className="absolute top-2 right-2 h-6 w-6 cursor-pointer text-gray-500"
+                onClick={() => handleDeletePlaylist(result.id)}
+              />
+              <button
+                className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
+                onClick={() => handlePlaylistClick(result)}
+              >
+                Voir Playlist
+              </button>
+              <p className="mt-2 text-center">{result.name}</p>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <Link href="/hub">
+            <p className="mt-10 p-4 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-700 transition duration-300 ease-in-out flex items-center justify-center">
+              Retour au Hub
+            </p>
+          </Link>
+        </div>
+      </div>
+
       <ChatPopup />
     </div>
   );
