@@ -1,25 +1,23 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+// use client
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
 import axios from 'axios';
 import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon } from '@heroicons/react/solid';
+import { MusicPlayerContext } from '../../../../context/MusicPlayerContext'; // Importez ou créez ce contexte
 
-// Type pour la musique
 type Music = {
+  videoId: string;
   id: string;
   title: string;
+  artist: string;
   thumbnailUrl: string;
   isFavorite: boolean;
 };
 
-// Type pour l'émotion
-type Emotion = '❤️' | '😀' | '😢' | '⚡'; 
-
-
-
-
+type Emotion = '❤️' | '😀' | '😢' | '⚡';
 
 const emotions = [
   { icon: EmojiHappyIcon, name: 'Amour', query: 'love songs' },
@@ -32,9 +30,9 @@ const MoodsPage: React.FC = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<Emotion | null>(null);
   const [musics, setMusics] = useState<Music[]>([]);
   const [favorites, setFavorites] = useState<Music[]>([]);
+  const { setCurrentTrack } = useContext(MusicPlayerContext);
 
   useEffect(() => {
-    // Charger les favoris du localStorage uniquement côté client
     const savedFavorites = JSON.parse(window.localStorage.getItem('favorites') || '[]');
     setFavorites(savedFavorites);
   }, []);
@@ -46,7 +44,6 @@ const MoodsPage: React.FC = () => {
   }, [selectedEmotion]);
 
   useEffect(() => {
-    // Sauvegarder les favoris dans le localStorage uniquement côté client
     window.localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
@@ -56,16 +53,18 @@ const MoodsPage: React.FC = () => {
       const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
         params: {
           part: 'snippet',
-          maxResults: 5,
+          maxResults: 4,
           q: query,
           type: 'video',
-          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk',
+          key: 'AIzaSyBu2Nefj0UMltKDqNWBT5uwcJwv9nnAZqo',
         },
       });
 
       const fetchedTracks: Music[] = response.data.items.map((item: any) => ({
+        videoId: item.id.videoId,
         id: item.id.videoId,
         title: item.snippet.title,
+        artist: 'Unknown Artist', // Ajoutez un champ artiste si nécessaire
         thumbnailUrl: item.snippet.thumbnails.default.url,
         isFavorite: favorites.some(f => f.id === item.id.videoId),
       }));
@@ -102,13 +101,19 @@ const MoodsPage: React.FC = () => {
         </div>
         <div className="track-list mt-8">
           {musics.map(music => (
-            <div key={music.id} className="track-item mb-4">
+            <div key={music.id} className="track-item mb-4 flex items-center">
               <HeartIcon
                 className={`ml-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
                 onClick={() => toggleFavorite(music)}
               />
               <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2" style={{ width: '100px', height: 'auto' }} />
-              <span>{music.title}</span>
+              <span className="mr-2">{music.title}</span>
+              <button 
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+                onClick={() => setCurrentTrack(music)}
+              >
+                Play
+              </button>
             </div>
           ))}
         </div>

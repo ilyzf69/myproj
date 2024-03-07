@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
-import { HeartIcon } from '@heroicons/react/outline';
+import { HeartIcon } from '@heroicons/react/solid';
 
 type Music = {
   id: string;
