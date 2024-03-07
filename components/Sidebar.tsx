@@ -1,3 +1,4 @@
+"use client"
 import React, { useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MusicNoteIcon, EmojiHappyIcon, SearchIcon, HeartIcon, LogoutIcon, PlayIcon, PauseIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
