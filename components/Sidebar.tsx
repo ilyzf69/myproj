@@ -68,6 +68,10 @@ export default function Sidebar() {
             <MusicNoteIcon className="h-6 w-6" />
             <span>Playlists</span>
           </Link>
+          <button className="mt-auto flex items-center gap-3 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700" onClick={handleLogout}>
+        <LogoutIcon className="h-6 w-6" />
+        <span>Déconnexion</span>
+      </button>
         </nav>
       </div>
       {currentTrack && (
@@ -84,15 +88,12 @@ export default function Sidebar() {
         </div>
       )}
       <div className="mt-4 text-center text-black">
-        Votre humeur du jour
-      </div>
-      <div className="mt-4 text-center text-black">
+        Votre humeur du jour<br/>
         {userMood}
       </div>
-      <button className="mt-auto flex items-center gap-3 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700" onClick={handleLogout}>
-        <LogoutIcon className="h-6 w-6" />
-        <span>Déconnexion</span>
-      </button>
+      <div className="mt-4 text-center text-black">
+      </div>
+      
       <button className="fixed bottom-4 left-4 bg-gray-600 p-2 rounded-full text-white hover:bg-gray-700" onClick={toggleSidebar}>
         {isSidebarOpen ? <ChevronLeftIcon className="h-6 w-6" /> : <ChevronRightIcon className="h-6 w-6" />}
       </button>
