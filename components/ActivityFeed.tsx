@@ -50,7 +50,7 @@ export default function MusicApp() {
           maxResults: 10,
           q: searchTerm,
           type: 'video',
-          key: 'AIzaSyBu2Nefj0UMltKDqNWBT5uwcJwv9nnAZqo', // Votre clé API YouTube
+          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk', // Votre clé API YouTube
         },
       });
 

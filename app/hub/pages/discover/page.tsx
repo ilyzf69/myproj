@@ -56,7 +56,7 @@ const MoodsPage: React.FC = () => {
           maxResults: 4,
           q: query,
           type: 'video',
-          key: 'AIzaSyBu2Nefj0UMltKDqNWBT5uwcJwv9nnAZqo',
+          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk',
         },
       });
 
