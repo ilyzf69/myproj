@@ -64,7 +64,7 @@ export default function Sidebar() {
           </Link>
           <Link href="/hub/pages/favorites" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
             <HeartIcon className="h-6 w-6" />
-            <span>J'aime</span>
+            <span>Jaime</span>
           </Link>
           <Link href="/hub/pages/playlists" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
             <MusicNoteIcon className="h-6 w-6" />

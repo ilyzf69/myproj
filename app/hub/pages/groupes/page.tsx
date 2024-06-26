@@ -234,7 +234,7 @@ const GroupesPage: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-gray-600">Vous n'avez rejoint aucune communauté.</p>
+            <p className="text-gray-600">Vous n avez rejoint aucune communauté.</p>
           )}
         </div>
         <Link href="/hub">
