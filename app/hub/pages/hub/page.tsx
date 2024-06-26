@@ -1,16 +1,17 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import ActivityFeed from '../../../../components/ActivityFeed';
 import ChatPopup from '../../../../components/Chat';
 import { auth, db } from '../../../firebaseConfig';
-import { getDoc, doc, setDoc } from 'firebase/firestore';
+import { getDoc, doc } from 'firebase/firestore';
 import { EmojiHappyIcon, EmojiSadIcon, HeartIcon, LightningBoltIcon } from '@heroicons/react/solid';
 import { onAuthStateChanged } from 'firebase/auth';
 import HappyVideo from '../../../videos/HappyVideo';
 import SadVideo from '../../../videos/SadVideo';
 import LoveVideo from '../../../videos/LoveVideo';
 import EnergeticVideo from '../../../videos/EnergeticVideo';
+import Sidebar2 from '../../../../components/MusicPlayerBar'; // Importer le composant MusicPlayer
 
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️', video: LoveVideo },
@@ -42,25 +43,25 @@ const Hub = () => {
   const BackgroundVideoComponent = emotions.find(e => e.mood === selectedEmotion)?.video;
 
   return (
-    <div className="relative flex h-screen">
-      <div className="absolute inset-0 z-0 ">
+    <div className="relative flex h-screen flex-col">
+      <div className="absolute inset-0 z-0">
         {BackgroundVideoComponent && <BackgroundVideoComponent />}
       </div>
-      <div className="relative z-10 w-full h-full">
+      <div className="relative z-10 w-full h-full flex-1 flex">
         <div className="fixed inset-y-0 left-0 z-20 w-64">
           <Sidebar />
         </div>
-        
-          <main className="p-4 lg:p-8 flex-1">
-            <div className="flex justify-center items-center flex-col">
-              
-                <ActivityFeed />
-              
-            </div>
-          </main>
-        
+        <main className="p-4 lg:p-8 flex-1">
+          <div className="flex justify-center items-center flex-col">
+            <ActivityFeed />
+          </div>
+        </main>
         <ChatPopup />
+        
       </div>
+     
+      
+       
     </div>
   );
 };

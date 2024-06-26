@@ -1,77 +1,123 @@
-"use client"
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../../components/Sidebar';
-import Link from 'next/link';
-import ChatPopup from '../../../../components/Chat';
+import { db, auth } from '../../../firebaseConfig';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { useMusicPlayer } from '../../../../context/MusicPlayerContext';
 import { HeartIcon } from '@heroicons/react/solid';
+import logoYT from '../../../../image/youtube.png';
+import logoSP from '../../../../image/spotify.png';
+import { onAuthStateChanged } from "firebase/auth";
+import MusicPlayerBar from '../../../../components/MusicPlayerBar';
 
 type Music = {
+  videoId: string;
   id: string;
   title: string;
+  artist: string;
   thumbnailUrl: string;
-  emotion: string;
-  isFavorite?: boolean;
+  isFavorite: boolean;
+  source: string;
 };
 
 const FavoritesPage: React.FC = () => {
   const [favorites, setFavorites] = useState<Music[]>([]);
+  const [filteredFavorites, setFilteredFavorites] = useState<Music[]>([]);
+  const [filter, setFilter] = useState<string>('all');
+  const { setCurrentTrack, setIsPlaying } = useMusicPlayer();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialiser les favoris à partir de localStorage seulement côté client
-    if (typeof window !== "undefined") {
-      const storedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-      setFavorites(storedFavorites);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+        fetchFavorites(user.uid);
+      } else {
+        setUserId(null);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const removeFavorite = (id: string) => {
-    const updatedFavorites = favorites.filter(music => music.id !== id);
-    setFavorites(updatedFavorites);
-    if (typeof window !== "undefined") {
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  useEffect(() => {
+    applyFilter();
+  }, [favorites, filter]);
+
+  const fetchFavorites = async (userId: string) => {
+    const favoritesCollection = collection(db, `users/${userId}/favorites`);
+    const favoritesSnapshot = await getDocs(favoritesCollection);
+    const fetchedFavorites = favoritesSnapshot.docs.map(doc => doc.data() as Music);
+    setFavorites(fetchedFavorites);
+  };
+
+  const applyFilter = () => {
+    if (filter === 'all') {
+      setFilteredFavorites(favorites);
+    } else {
+      setFilteredFavorites(favorites.filter(music => music.source === filter));
     }
   };
 
-  const getEmoji = (emotion: string) => {
-    switch (emotion) {
-      case '❤️': return '❤️';
-      case '😀': return '😀';
-      case '😢': return '😢';
-      case '⚡': return '⚡';
-      default: return '';
-    }
+  const removeFavorite = async (id: string) => {
+    if (!userId) return;
+
+    const musicRef = doc(db, `users/${userId}/favorites`, id);
+    await deleteDoc(musicRef);
+    setFavorites(favorites.filter(favorite => favorite.id !== id));
+  };
+
+  const handlePlay = (music: Music) => {
+    setCurrentTrack(music);
+    setIsPlaying(true);
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col">
       <Sidebar />
-      <div className="flex-1 flex flex-col justify-center items-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Favoris</h1>
-          <p className="mt-2 text-lg">Retrouvez vos contenus favoris.</p>
-          <div>
-            {favorites.map((music) => (
-              <div key={music.id} className="flex items-center mt-2">
-                <span>{getEmoji(music.emotion)}</span>
-                <a href={`https://www.youtube.com/watch?v=${music.id}`} target="_blank" rel="noopener noreferrer">
-                  {music.title}
-                </a>
-                <img src={music.thumbnailUrl} alt={music.title} />
-                <HeartIcon 
-                  className="ml-2 h-6 w-6 text-red-500 cursor-pointer" 
-                  onClick={() => removeFavorite(music.id)} 
-                />
-              </div>
-            ))}
-          </div>
+      <div className="flex-1 flex flex-col items-center p-10 overflow-y-auto">
+        <h1 className="text-4xl font-bold text-green-500 mb-5">Mes Favoris</h1>
+        <div className="mb-4">
+          <button
+            onClick={() => setFilter('all')}
+            className={`mr-2 p-2 rounded ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Tous
+          </button>
+          <button
+            onClick={() => setFilter('youtube')}
+            className={`mr-2 p-2 rounded ${filter === 'youtube' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            YouTube
+          </button>
+          <button
+            onClick={() => setFilter('spotify')}
+            className={`p-2 rounded ${filter === 'spotify' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+          >
+            Spotify
+          </button>
         </div>
-        <Link href="/hub">
-          <p className="mt-10 p-4 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 transition duration-300 ease-in-out flex items-center justify-center">
-            Retour au Hub
-          </p>
-        </Link>
+        <div className="track-list mt-8 w-full flex-1 flex flex-col items-center p-10">
+          {filteredFavorites.map(music => (
+            <div key={music.id} className="track-item mb-4 flex items-center bg-white shadow-md p-4 rounded-lg">
+              <HeartIcon
+                className="ml-2 h-6 w-6 cursor-pointer text-red-500"
+                onClick={() => removeFavorite(music.id)}
+              />
+              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2 rounded" style={{ width: '100px', height: 'auto' }} />
+              <p className="mr-2 flex-1">{music.title}</p>
+              {music.source === 'youtube' && <img src={logoYT.src} alt="YouTube" className="h-6 w-6 mr-2" />}
+              {music.source === 'spotify' && <img src={logoSP.src} alt="Spotify" className="h-6 w-6 mr-2" />}
+              <button
+                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300"
+                onClick={() => handlePlay(music)}
+              >
+                Écouter
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
-      <ChatPopup/>
+      <MusicPlayerBar /> {/* Ajouter le composant MusicPlayerBar en bas */}
     </div>
   );
 };

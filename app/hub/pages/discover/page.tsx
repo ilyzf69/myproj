@@ -1,12 +1,13 @@
-"use client"
-// use client
+"use client";
 import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
-import axios from 'axios';
 import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon } from '@heroicons/react/solid';
-import { MusicPlayerContext } from '../../../../context/MusicPlayerContext'; // Importez ou créez ce contexte
+import { MusicPlayerContext } from '../../../../context/MusicPlayerContext';
+import { db } from '../../../firebaseConfig';
+import { doc, setDoc, deleteDoc, getDocs, collection } from 'firebase/firestore';
 
 type Music = {
   videoId: string;
@@ -20,22 +21,16 @@ type Music = {
 type Emotion = '❤️' | '😀' | '😢' | '⚡';
 
 const emotions = [
-  { icon: EmojiHappyIcon, name: 'Amour', query: 'love songs' },
-  { icon: EmojiSadIcon, name: 'Joyeux', query: 'happy songs' },
-  { icon: LightningBoltIcon, name: 'Triste', query: 'sad songs' },
-  { icon: HeartIcon, name: 'Énergique', query: 'energetic songs' },
+  { icon: HeartIcon, name: 'Amour', query: 'love songs' },
+  { icon: EmojiHappyIcon, name: 'Joyeux', query: 'happy songs' },
+  { icon: EmojiSadIcon, name: 'Triste', query: 'sad songs' },
+  { icon: LightningBoltIcon, name: 'Énergique', query: 'energetic songs' },
 ];
 
 const MoodsPage: React.FC = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<Emotion | null>(null);
   const [musics, setMusics] = useState<Music[]>([]);
-  const [favorites, setFavorites] = useState<Music[]>([]);
   const { setCurrentTrack } = useContext(MusicPlayerContext);
-
-  useEffect(() => {
-    const savedFavorites = JSON.parse(window.localStorage.getItem('favorites') || '[]');
-    setFavorites(savedFavorites);
-  }, []);
 
   useEffect(() => {
     if (selectedEmotion) {
@@ -44,39 +39,75 @@ const MoodsPage: React.FC = () => {
   }, [selectedEmotion]);
 
   useEffect(() => {
-    window.localStorage.setItem('favorites', JSON.stringify(favorites));
-  }, [favorites]);
+    fetchFavorites();
+  }, []);
 
   const fetchTracks = async (emotion: Emotion) => {
     const query = emotions.find(e => e.name === emotion)?.query || '';
     if (query) {
-      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-        params: {
-          part: 'snippet',
-          maxResults: 4,
-          q: query,
-          type: 'video',
-          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk',
-        },
-      });
+      try {
+        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+          params: {
+            part: 'snippet',
+            maxResults: 10,
+            q: query,
+            type: 'video',
+            key: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY,
+          },
+        });
 
-      const fetchedTracks: Music[] = response.data.items.map((item: any) => ({
-        videoId: item.id.videoId,
-        id: item.id.videoId,
-        title: item.snippet.title,
-        artist: 'Unknown Artist', // Ajoutez un champ artiste si nécessaire
-        thumbnailUrl: item.snippet.thumbnails.default.url,
-        isFavorite: favorites.some(f => f.id === item.id.videoId),
-      }));
+        const fetchedTracks: Music[] = response.data.items.map((item: { id: { videoId: any; }; snippet: { title: any; thumbnails: { default: { url: any; }; }; }; }) => ({
+          videoId: item.id.videoId,
+          id: item.id.videoId,
+          title: item.snippet.title,
+          artist: 'Unknown Artist',
+          thumbnailUrl: item.snippet.thumbnails.default.url,
+          isFavorite: false,
+        }));
 
-      setMusics(fetchedTracks);
+        const favoriteTracks = await getFavorites();
+
+        setMusics(fetchedTracks.map(track => ({
+          ...track,
+          isFavorite: favoriteTracks.some(fav => fav.id === track.id),
+        })));
+      } catch (error) {
+        console.error('Error fetching tracks:', error);
+      }
     }
   };
 
-  const toggleFavorite = (music: Music) => {
-    const updatedFavorites = music.isFavorite ? favorites.filter(f => f.id !== music.id) : [...favorites, music];
-    setMusics(musics.map(m => m.id === music.id ? { ...m, isFavorite: !m.isFavorite } : m));
-    setFavorites(updatedFavorites);
+  const toggleFavorite = async (music: Music) => {
+    const musicRef = doc(db, "favorites", music.id);
+
+    try {
+      if (music.isFavorite) {
+        await deleteDoc(musicRef);
+      } else {
+        await setDoc(musicRef, { ...music, isFavorite: true });
+      }
+
+      setMusics(musics.map(m => m.id === music.id ? { ...m, isFavorite: !m.isFavorite } : m));
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+    }
+  };
+
+  const getFavorites = async () => {
+    const favoritesCollection = await getDocs(collection(db, "favorites"));
+    return favoritesCollection.docs.map(doc => doc.data() as Music);
+  };
+
+  const fetchFavorites = async () => {
+    try {
+      const favorites = await getFavorites();
+      setMusics(prevMusics => prevMusics.map(music => ({
+        ...music,
+        isFavorite: favorites.some(fav => fav.id === music.id),
+      })));
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
   };
 
   return (
@@ -107,21 +138,14 @@ const MoodsPage: React.FC = () => {
                 onClick={() => toggleFavorite(music)}
               />
               <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2" style={{ width: '100px', height: 'auto' }} />
-              <span className="mr-2">{music.title}</span>
-              <button 
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
-                onClick={() => setCurrentTrack(music)}
-              >
-                Play
-              </button>
+              <p className="mr-2">{music.title}</p>
+              
             </div>
           ))}
         </div>
-        <Link href="/hub">
-          <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center">
-            Retour au Hub
-          </p>
-        </Link>
+        <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
+          <Link href="/hub">Retour au Hub</Link>
+        </p>
       </div>
       <ChatPopup />
     </div>

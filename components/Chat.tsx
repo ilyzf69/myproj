@@ -11,29 +11,41 @@ const ChatPopup = () => {
     },
   ]);
 
-  // Fonction pour envoyer le message et recevoir la réponse du chatbot
   const handleSendMessage = async () => {
     if (!input.trim()) return; // Éviter l'envoi de messages vides
-    const newMessage = { text: input, sender: "user" };
-    setMessages((prev) => [...prev, newMessage]); // Ajouter le message de l'utilisateur
-    setInput(""); // Réinitialiser l'input
+    const userMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]); // Ajouter le message de l'utilisateur à la conversation
+    setInput(""); // Réinitialiser le champ de saisie
 
-    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: input }),
+      });
+      const data = await response.json();
+      const botMessage = { text: data.response.trim(), sender: "assistant" };
+      setMessages((prevMessages) => [...prevMessages, botMessage]);
+    } catch (error) {
+      console.error('Erreur lors de la communication avec le chatbot:', error);
+      const errorMessage = { text: "Désolé, je ne fonctionne pas encore.", sender: "assistant" };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+    }
   };
 
   return (
     <div className="fixed bottom-0 right-0 m-4 max-w-md">
       <button
-  className="w-16 h-16 bg-blue-500 text-white rounded-full cursor-pointer m-1"
-  onClick={() => setIsOpen(!isOpen)}
->
-  {isOpen ? 'Fermer' : 'Chat'}
-</button>
-
-
+        className="w-16 h-16 bg-blue-500 text-white rounded-full cursor-pointer flex items-center justify-center"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? 'CHAT' : 'CHAT'}
+      </button>
       {isOpen && (
         <div className="bg-white shadow-xl rounded-lg overflow-hidden">
-          <div className="p-4">
+          <div className="p-4 max-h-80 overflow-auto">
             {messages.map((msg, index) => (
               <div key={index} className={`text-sm p-2 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
                 <span className={`inline-block rounded-lg p-2 ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>

@@ -1,275 +1,255 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import Sidebar from '../../../../components/Sidebar';
-import Link from 'next/link';
-import ChatPopup from '../../../../components/Chat';
-import axios from 'axios';
-import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon, TrashIcon, ChevronDownIcon } from '@heroicons/react/solid';
+"use client";
+import React, { useEffect, useState, useContext } from 'react';
 import { db, auth } from '../../../firebaseConfig';
-import { collection, doc, setDoc, deleteDoc, getDocs, where, query } from "firebase/firestore";
-
+import { collection, doc, setDoc, deleteDoc, getDocs, updateDoc, getDoc } from 'firebase/firestore';
+import Sidebar from '../../../../components/Sidebar';
+import { MusicPlayerContext } from '../../../../context/MusicPlayerContext';
+import { HeartIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon, ShareIcon } from '@heroicons/react/solid';
+import Link from 'next/link';
+import { onAuthStateChanged } from 'firebase/auth';
 
 type Music = {
+  videoId: string;
   id: string;
   title: string;
+  artist: string;
   thumbnailUrl: string;
   isFavorite: boolean;
-  emotion: Emotion;
+  source: string;
 };
-
-type Emotion = '❤️' | '😀' | '😢' | '⚡';
 
 type Playlist = {
   id: string;
-  userId: string;
   name: string;
   musics: Music[];
 };
 
-const emotions = [
-  { icon: HeartIcon, name: 'Amour', query: 'love' },
-  { icon: EmojiHappyIcon, name: 'Joyeux', query: 'happy' },
-  { icon: EmojiSadIcon, name: 'Triste', query: 'sad' },
-  { icon: LightningBoltIcon, name: 'Énergique', query: '⚡' },
-];
-
-const MoodsPage: React.FC = () => {
-  const [selectedEmotion, setSelectedEmotion] = useState<Emotion | null>(null);
-  const [musics, setMusics] = useState<Music[]>([]);
-  const [favorites, setFavorites] = useState<Music[]>([]);
+const PlaylistsPage: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [newPlaylistName, setNewPlaylistName] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<Playlist[]>([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
-  const [showPlaylistModal, setShowPlaylistModal] = useState<boolean>(false);
+  const [favorites, setFavorites] = useState<Music[]>([]);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [showFavorites, setShowFavorites] = useState<{ [key: string]: boolean }>({});
+  const [showShareDialog, setShowShareDialog] = useState<{ show: boolean, playlist?: Playlist }>({ show: false });
+  const [joinedGroups, setJoinedGroups] = useState<string[]>([]);
+  const { setCurrentTrack } = useContext(MusicPlayerContext);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const savedFavorites = JSON.parse(window.localStorage.getItem('favorites') || '[]');
-    setFavorites(savedFavorites);
-
-    const fetchPlaylists = async () => {
-      const user = auth.currentUser;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userPlaylistsQuery = query(collection(db, 'playlists'), where('userId', '==', user.uid));
-        const playlistsSnapshot = await getDocs(userPlaylistsQuery);
-        const fetchedPlaylists: Playlist[] = [];
-        playlistsSnapshot.forEach((doc) => {
-          fetchedPlaylists.push({ id: doc.id, ...doc.data() } as Playlist);
-        });
-        setPlaylists(fetchedPlaylists);
+        setUser(user);
+        fetchPlaylists();
+        fetchFavorites(user.uid);
+        fetchJoinedGroups(user.uid);
       }
-    };
-    fetchPlaylists();
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (selectedEmotion) {
-      fetchTracks(selectedEmotion);
-    }
-  }, [selectedEmotion]);
+  const fetchPlaylists = async () => {
+    const playlistsCollection = collection(db, 'playlists');
+    const playlistsSnapshot = await getDocs(playlistsCollection);
+    const fetchedPlaylists = playlistsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Playlist));
+    setPlaylists(fetchedPlaylists);
+  };
 
-  useEffect(() => {
-    window.localStorage.setItem('favorites', JSON.stringify(favorites));
-  }, [favorites]);
+  const fetchFavorites = async (userId: string) => {
+    const favoritesCollection = collection(db, `users/${userId}/favorites`);
+    const favoritesSnapshot = await getDocs(favoritesCollection);
+    const fetchedFavorites = favoritesSnapshot.docs.map(doc => doc.data() as Music);
+    setFavorites(fetchedFavorites);
+  };
 
-  const fetchTracks = async (emotion: Emotion) => {
-    const emotionQuery = emotions.find(e => e.name === emotion)?.query || '';
-    if (emotionQuery) {
-      const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-        params: {
-          part: 'snippet',
-          maxResults: 5,
-          q: emotionQuery,
-          type: 'playlist',
-          key: 'AIzaSyCKpHu0QPxCHrzPd_ByiFClj-akdqOtLTk',
-        },
-      });
-
-      const fetchedTracks: Music[] = response.data.items.map((item: any) => ({
-        id: item.id.videoId,
-        title: item.snippet.title,
-        thumbnailUrl: item.snippet.thumbnails.default.url,
-        isFavorite: favorites.some(f => f.id === item.id.videoId),
-        emotion: selectedEmotion,
-      }));
-
-      setMusics(fetchedTracks);
+  const fetchJoinedGroups = async (userId: string) => {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    if (userDoc.exists()) {
+      setJoinedGroups(userDoc.data().joinedGroups || []);
     }
   };
 
-  const toggleFavorite = (music: Music) => {
-    const updatedFavorites = music.isFavorite ? favorites.filter(f => f.id !== music.id) : [...favorites, music];
-    setMusics(musics.map(m => (m.id === music.id ? { ...m, isFavorite: !m.isFavorite } : m)));
-    setFavorites(updatedFavorites);
-  };
-
-  const handleAddPlaylist = async (e: React.FormEvent<HTMLFormElement>) => {
+  const createPlaylist = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = auth.currentUser;
-    if (user) {
-      const newPlaylistRef = doc(collection(db, 'playlists'));
-      const newPlaylist: Playlist = {
-        id: newPlaylistRef.id,
-        userId: user.uid,
-        name: newPlaylistName,
-        musics: musics.filter(music => music.isFavorite),
-      };
-    
-      await setDoc(newPlaylistRef, newPlaylist);
-      setPlaylists([...playlists, newPlaylist]);
-      setNewPlaylistName('');
-    }
+    const newPlaylistRef = doc(collection(db, 'playlists'));
+    const newPlaylist = {
+      id: newPlaylistRef.id,
+      name: newPlaylistName,
+      musics: [],
+    };
+    await setDoc(newPlaylistRef, newPlaylist);
+    setPlaylists([...playlists, newPlaylist]);
+    setNewPlaylistName('');
   };
 
-  const handleDeletePlaylist = async (playlistId: string) => {
-    await deleteDoc(doc(db, 'playlists', playlistId));
+  const deletePlaylist = async (playlistId: string) => {
+    const playlistRef = doc(db, 'playlists', playlistId);
+    await deleteDoc(playlistRef);
     setPlaylists(playlists.filter(playlist => playlist.id !== playlistId));
   };
 
-  const handlePlaylistClick = (playlist: Playlist) => {
-    setSelectedPlaylist(playlist);
-    setShowPlaylistModal(true);
+  const addToPlaylist = async (playlistId: string, track: Music) => {
+    const playlistRef = doc(db, 'playlists', playlistId);
+    const playlistDoc = await getDoc(playlistRef);
+    if (playlistDoc.exists()) {
+      const playlistData = playlistDoc.data() as Playlist;
+      const updatedMusics = [...playlistData.musics, track];
+      await updateDoc(playlistRef, { musics: updatedMusics });
+      setPlaylists(playlists.map(playlist => playlist.id === playlistId ? { ...playlist, musics: updatedMusics } : playlist));
+    }
   };
 
-  const handleClosePlaylistModal = () => {
-    setSelectedPlaylist(null);
-    setShowPlaylistModal(false);
+  const removeFromPlaylist = async (playlistId: string, trackId: string) => {
+    const playlistRef = doc(db, 'playlists', playlistId);
+    const playlistDoc = await getDoc(playlistRef);
+    if (playlistDoc.exists()) {
+      const playlistData = playlistDoc.data() as Playlist;
+      const updatedMusics = playlistData.musics.filter(music => music.id !== trackId);
+      await updateDoc(playlistRef, { musics: updatedMusics });
+      setPlaylists(playlists.map(playlist => playlist.id === playlistId ? { ...playlist, musics: updatedMusics } : playlist));
+    }
   };
 
-  const handleSearch = () => {
-    const results = playlists.filter(playlist => playlist.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    setSearchResults(results);
+  const toggleFavorites = (playlistId: string) => {
+    setShowFavorites(prev => ({ ...prev, [playlistId]: !prev[playlistId] }));
+  };
+
+  const sharePlaylist = (playlist: Playlist) => {
+    setShowShareDialog({ show: true, playlist });
+  };
+
+  const handleShare = async (shareInApp: boolean, groupId?: string) => {
+    if (!showShareDialog.playlist) return;
+
+    if (shareInApp && groupId) {
+      const message = {
+        text: `Check out this playlist: ${showShareDialog.playlist.name}`,
+        sender: user.email,
+        timestamp: new Date(),
+        playlistId: showShareDialog.playlist.id,
+      };
+      await setDoc(doc(db, `groups/${groupId}/messages`, `${Date.now()}`), message);
+    } else {
+      const shareData = {
+        title: showShareDialog.playlist.name,
+        text: `Check out this playlist: ${showShareDialog.playlist.name}`,
+        url: window.location.href,
+      };
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        console.error("Error sharing playlist:", error);
+      }
+    }
+
+    setShowShareDialog({ show: false });
   };
 
   return (
-    <div className="grid gap-4 h-screen">
+    <div className="flex h-screen">
       <Sidebar />
-
-      <div className="flex-1 flex flex-col items-center">
-      <h1 className="text-2xl font-bold text-center mt-10">Quel émotion vous recherchez ?</h1>
-        <div className="flex justify-center space-x-4 mb-8">
-          
-          {emotions.map(({ icon, name }) => (
-            <div
-              key={name}
-              className={`cursor-pointer ${selectedEmotion === name ? 'border-b-2 border-red-500' : ''}`}
-              onClick={() => setSelectedEmotion(name as Emotion)}
-            >
-              <p>{name}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {musics.map(music => (
-            <div key={music.id} className="relative">
-              <HeartIcon
-                className={`absolute top-2 right-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
-                onClick={() => toggleFavorite(music)}
-              />
-              <img src={music.thumbnailUrl} alt={music.title} className="w-full h-auto" />
-              <p className="mt-2 text-center">{music.title}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-  {playlists.map(playlist => (
-    <div key={playlist.id} className="relative border border-gray-200 rounded-md p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold truncate">{playlist.name}</h3>
-        <TrashIcon
-          className="h-6 w-6 cursor-pointer text-gray-500"
-          onClick={() => handleDeletePlaylist(playlist.id)}
-        />
-      </div>
-      <button
-        className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
-        onClick={() => handlePlaylistClick(playlist)}
-      >
-        Voir Playlist
-      </button>
-    </div>
-  ))}
-</div>
-
-        {showPlaylistModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-8 rounded-lg">
-              <button
-                className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
-                onClick={handleClosePlaylistModal}
-              >
-                <ChevronDownIcon className="h-6 w-6" />
-              </button>
-              <h2 className="text-2xl font-bold mb-4">{selectedPlaylist?.name}</h2>
-              <div className="overflow-auto max-h-96">
-                {selectedPlaylist?.musics.map(music => (
-                  <div key={music.id} className="flex items-center mb-4">
-                    <HeartIcon
-                      className={`mr-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
-                      onClick={() => toggleFavorite(music)}
-                    />
-                    <img src={music.thumbnailUrl} alt={music.title} className="w-24 h-auto" />
-                    <p className="ml-2">{music.title}</p>
+      <div className="flex-1 flex flex-col items-center p-10">
+        <h1 className="text-4xl font-bold text-green-500 mb-5">Mes Playlists</h1>
+        <form onSubmit={createPlaylist} className="mb-5">
+          <input
+            type="text"
+            placeholder="Nom de la playlist"
+            value={newPlaylistName}
+            onChange={(e) => setNewPlaylistName(e.target.value)}
+            className="p-2 border-2 border-gray-300 rounded-md mr-2"
+          />
+          <button type="submit" className="bg-blue-500 text-white p-2 rounded-md">Créer</button>
+        </form>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {playlists && playlists.length > 0 ? playlists.map(playlist => (
+            <div key={playlist.id} className="p-4 bg-gray-200 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold">{playlist.name}</h3>
+                <div className="flex items-center space-x-2">
+                  <TrashIcon className="h-6 w-6 text-red-500 cursor-pointer" onClick={() => deletePlaylist(playlist.id)} />
+                  <ShareIcon className="h-6 w-6 text-blue-500 cursor-pointer" onClick={() => sharePlaylist(playlist)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                {playlist.musics && playlist.musics.length > 0 ? playlist.musics.map(music => (
+                  <div key={music.id} className="flex items-center space-x-2">
+                    <img src={music.thumbnailUrl} alt={music.title} className="w-12 h-12" />
+                    <div className="flex-1">
+                      <p className="font-semibold">{music.title}</p>
+                      <p className="text-sm text-gray-600">{music.artist}</p>
+                    </div>
+                    <button className="bg-red-500 text-white p-1 rounded" onClick={() => removeFromPlaylist(playlist.id, music.id)}>Retirer</button>
                   </div>
-                ))}
+                )) : <p>Aucune musique dans cette playlist</p>}
+              </div>
+              <div className="mt-4">
+                <h4 className="font-semibold mb-2 flex items-center cursor-pointer" onClick={() => toggleFavorites(playlist.id)}>
+                  Ajouter des musiques depuis les favoris
+                  {showFavorites[playlist.id] ? (
+                    <ChevronUpIcon className="w-5 h-5 ml-2" />
+                  ) : (
+                    <ChevronDownIcon className="w-5 h-5 ml-2" />
+                  )}
+                </h4>
+                {showFavorites[playlist.id] && (
+                  <div className="space-y-2">
+                    {favorites && favorites.length > 0 ? favorites.map(music => (
+                      <div key={music.id} className="flex items-center space-x-2">
+                        <img src={music.thumbnailUrl} alt={music.title} className="w-12 h-12" />
+                        <div className="flex-1">
+                          <p className="font-semibold">{music.title}</p>
+                          <p className="text-sm text-gray-600">{music.artist}</p>
+                        </div>
+                        <button className="bg-green-500 text-white p-1 rounded" onClick={() => addToPlaylist(playlist.id, music)}>Ajouter</button>
+                      </div>
+                    )) : <p>Aucun favori à ajouter</p>}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
-
-        <div className='flex justify-center'>
-          <div className="mb-8">
-            <form onSubmit={handleAddPlaylist}>
-              <input
-                type="text"
-                placeholder="Nom de la playlist"
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
-                className="p-2 border-2 border-gray-300 rounded-md"
-              />
-              <button
-                type="submit"
-                className="mt-2 p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
-              >
-                Créer Playlist
-              </button>
-            </form>
-          </div>
+          )) : <p>Aucune playlist créée</p>}
         </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {searchResults.map(result => (
-            <div key={result.id} className="relative">
-              <TrashIcon
-                className="absolute top-2 right-2 h-6 w-6 cursor-pointer text-gray-500"
-                onClick={() => handleDeletePlaylist(result.id)}
-              />
-              <button
-                className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out"
-                onClick={() => handlePlaylistClick(result)}
-              >
-                Voir Playlist
-              </button>
-              <p className="mt-2 text-center">{result.name}</p>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <Link href="/hub">
-            <p className="mt-10 p-4 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-700 transition duration-300 ease-in-out flex items-center justify-center">
-              Retour au Hub
-            </p>
-          </Link>
-        </div>
+        <Link href="/hub">
+          <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-700 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
+            Retour au Hub
+          </p>
+        </Link>
       </div>
-
-      <ChatPopup />
+      {showShareDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-2xl font-bold mb-4">Partager la playlist</h2>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => handleShare(false)}
+            >
+              Partager à l'extérieur de l'application
+            </button>
+            {joinedGroups.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xl font-semibold mb-2">Partager dans un groupe</h3>
+                {joinedGroups.map((groupName, index) => (
+                  <button
+                    key={index}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded mb-2 w-full text-left"
+                    onClick={() => handleShare(true, groupName)}
+                  >
+                    {groupName}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+              onClick={() => setShowShareDialog({ show: false })}
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default MoodsPage;
+export default PlaylistsPage;

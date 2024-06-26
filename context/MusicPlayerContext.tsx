@@ -1,46 +1,38 @@
-"use client"
-// MusicPlayerContext.tsx
-import React, { createContext, useState, ReactNode, useContext } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-// Définir le type pour les informations de la musique
 type Music = {
+  source: string;
+  videoId: string;
   id: string;
   title: string;
   artist: string;
   thumbnailUrl: string;
-  videoId: string;
+  isFavorite: boolean;
 };
 
-// Définir le type pour le contexte
 type MusicPlayerContextType = {
   currentTrack: Music | null;
+  setCurrentTrack: (track: Music) => void;
   isPlaying: boolean;
-  setCurrentTrack: (music: Music | null) => void;
-  togglePlayPause: () => void;
+  setIsPlaying: (playing: boolean) => void;
 };
 
-// Créer le contexte avec un objet vide respectant le type MusicPlayerContextType
-export const MusicPlayerContext = createContext<MusicPlayerContextType>({} as MusicPlayerContextType);
+export const MusicPlayerContext = createContext<MusicPlayerContextType>({
+  currentTrack: null,
+  setCurrentTrack: () => {},
+  isPlaying: false,
+  setIsPlaying: () => {},
+});
 
-// Créer un provider pour le contexte
-type MusicPlayerProviderProps = {
-  children: ReactNode;
-};
+export const useMusicPlayer = () => useContext(MusicPlayerContext);
 
-export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
+export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentTrack, setCurrentTrack] = useState<Music | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
-
   return (
-    <MusicPlayerContext.Provider value={{ currentTrack, isPlaying, setCurrentTrack, togglePlayPause }}>
+    <MusicPlayerContext.Provider value={{ currentTrack, setCurrentTrack, isPlaying, setIsPlaying }}>
       {children}
     </MusicPlayerContext.Provider>
   );
 };
-
-// Créer un hook personnalisé pour utiliser le contexte de musique
-export const useMusicPlayer = () => useContext(MusicPlayerContext);
