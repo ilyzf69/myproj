@@ -1,6 +1,5 @@
 import admin from 'firebase-admin';
 
-const serviceAccount = require('path/dentials.json');
 
 if (!admin.apps.length) {
   admin.initializeApp({
