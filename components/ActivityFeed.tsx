@@ -4,7 +4,6 @@ import axios from 'axios';
 import { db, auth } from '../app/firebaseConfig';
 import logoYT from '../image/youtube.png';
 import logoSP from '../image/spotify.png';
-import logoALL from '../image/all.png';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import getSpotifyAccessToken from './spotifyService';
 import { onAuthStateChanged } from "firebase/auth";
@@ -270,7 +269,6 @@ export default function ActivityFeed() {
           onClick={() => setSource('all')}
           className={`p-2 rounded-full ${source === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
         >
-          <img src={logoALL.src} alt="ALL" className="h-12 w-12" />
         </button>
         <button
           onClick={() => setSource('youtube')}
