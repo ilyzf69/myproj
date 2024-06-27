@@ -11,7 +11,6 @@ import HappyVideo from '../../../videos/HappyVideo';
 import SadVideo from '../../../videos/SadVideo';
 import LoveVideo from '../../../videos/LoveVideo';
 import EnergeticVideo from '../../../videos/EnergeticVideo';
-import Sidebar2 from '../../../../components/MusicPlayerBar'; // Importer le composant MusicPlayer
 
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️', video: LoveVideo },
