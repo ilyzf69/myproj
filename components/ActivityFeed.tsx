@@ -381,7 +381,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
                 </button>
               ))
             ) : (
-              <p className="text-red-500">Aucune playlist trouvée. Veuillez en créer une d'abord.</p>
+              <p className="text-red-500">Aucune playlist trouvée. Veuillez en créer une d abord.</p>
             )}
             <button onClick={() => setShowPlaylistDialog(false)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full">
               Fermer
@@ -408,7 +408,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
               }}
               className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 w-full"
             >
-              Partager à l'extérieur de l'application
+              Partager à l extérieur de l application
             </button>
             <div className="my-2"></div>
             <button
