@@ -37,7 +37,7 @@ const Page = () => {
         {typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('showHub') && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 max-w-screen-lg mx-auto">
             <section className="bg-gray-800 p-8 rounded-xl shadow-lg">
-              <ActivityFeed />
+              <ActivityFeed userMood={''} />
             </section>
             <section className="bg-gray-800 p-8 rounded-xl shadow-lg">
               <CampaignCard />
