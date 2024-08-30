@@ -256,7 +256,7 @@ const PlaylistsPage: React.FC = () => {
               className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
               onClick={() => handleShare(false)}
             >
-              Partager à l'extérieur de l'application
+              Partager à l extérieur de l application
             </button>
             {joinedGroups.length > 0 && (
               <div className="mt-4">

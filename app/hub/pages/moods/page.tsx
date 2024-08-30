@@ -72,7 +72,7 @@ const HumeurPage: React.FC = () => {
           <Sidebar />
         </div>
         <div className="flex-1 flex flex-col items-center p-10 ml-64">
-          <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Comment vous sentez-vous aujourd'hui ?</h1>
+          <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Comment vous sentez-vous aujourd hui ?</h1>
           <div className="flex justify-center mt-5 flex-wrap">
             {emotions.map(({ icon: Icon, name, mood }) => (
               <button
