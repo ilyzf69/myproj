@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import ActivityFeed from '../../../../components/ActivityFeed';
@@ -11,11 +10,12 @@ import HappyVideo from '../../../videos/HappyVideo';
 import SadVideo from '../../../videos/SadVideo';
 import LoveVideo from '../../../videos/LoveVideo';
 import EnergeticVideo from '../../../videos/EnergeticVideo';
+import MusicBar from '../../../../components/MusicBar'; // Import du composant MusicBar
 
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️', video: LoveVideo },
   { icon: EmojiHappyIcon, name: 'Joyeux', mood: '😀', video: HappyVideo },
-  { icon: EmojiSadIcon, name: 'Triste', mood: '😢', video: SadVideo },
+  { icon: EmojiSadIcon, name: 'Triste', mood: '😢' },
   { icon: LightningBoltIcon, name: 'Énergique', mood: '⚡', video: EnergeticVideo },
 ];
 
@@ -52,15 +52,12 @@ const Hub = () => {
         </div>
         <main className="p-4 lg:p-8 flex-1">
           <div className="flex justify-center items-center flex-col">
-            <ActivityFeed />
+            <ActivityFeed userMood={''} />
           </div>
         </main>
         <ChatPopup />
-        
       </div>
-     
-      
-       
+      <MusicBar />
     </div>
   );
 };

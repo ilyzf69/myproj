@@ -21,6 +21,8 @@
     "openai": "^4.52.0",
     "react": "^18",
     "react-dom": "^18",
+    "react-player": "^2.16.0",
+    "react-youtube": "^10.1.0",
     "recharts": "^2.12.1"
   },
   "devDependencies": {

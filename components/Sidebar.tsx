@@ -1,7 +1,7 @@
-"use client"
+"use client";
 import React, { useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MusicNoteIcon, EmojiHappyIcon, SearchIcon, HeartIcon, LogoutIcon, PlayIcon, PauseIcon, ChevronLeftIcon, ChevronRightIcon, UserGroupIcon } from '@heroicons/react/solid';
+import { MusicNoteIcon, EmojiHappyIcon, SearchIcon, HeartIcon, LogoutIcon, UserGroupIcon } from '@heroicons/react/solid';
 import { auth, db } from '../app/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -9,9 +9,8 @@ import logoImage from '../image/logo.png';
 import { MusicPlayerContext } from '../context/MusicPlayerContext';
 
 export default function Sidebar() {
-  const { currentTrack, isPlaying } = useContext(MusicPlayerContext);
+  const { currentTrack } = useContext(MusicPlayerContext);
   const [userMood, setUserMood] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -27,79 +26,83 @@ export default function Sidebar() {
     return () => unsubscribe();
   }, []);
 
-  function Logo() {
-    return <img src={logoImage.src} alt="Logo" className="h-12 w-12" />;
-  }
-
   const handleLogout = async () => {
     try {
       await auth.signOut();
       window.location.href = '/login';
-      
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error.message);
     }
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  function Logo() {
+    return <img src={logoImage.src} alt="Logo" className="h-12 w-12" />;
+  }
 
   return (
-    <div className={`fixed rounded-xl shadow-lg inset-y-0 ${isSidebarOpen ? 'left-0' : '-left-56'} p-5 bg-custom-bg text-white flex flex-col justify-between transition-all duration-300`}>
+    <div className="flex flex-col justify-between h-full bg-black text-white p-5 rounded-xl shadow-lg">
       <div>
         <div className="mb-10 flex justify-center">
           <Link href="/hub">
-            <p><Logo/></p>
+            <p><Logo /></p>
           </Link>
         </div>
         <nav className="flex flex-col space-y-4">
-          <Link href="/hub/pages/discover" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-            <SearchIcon className="h-6 w-6" />
-            <span>Découvrir</span>
+          <Link href="/hub/pages/discover">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <SearchIcon className="h-6 w-6" />
+              Découvrir
+            </p>
           </Link>
-          <Link href="/hub/pages/moods" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-            <EmojiHappyIcon className="h-6 w-6" />
-            <span>Humeurs</span>
+          <Link href="/hub/pages/moods">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <EmojiHappyIcon className="h-6 w-6" />
+              Humeurs
+            </p>
           </Link>
-          <Link href="/hub/pages/favorites" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-            <HeartIcon className="h-6 w-6" />
-            <span>Jaime</span>
+          <Link href="/hub/pages/favorites">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <HeartIcon className="h-6 w-6" />
+              J'aime
+            </p>
           </Link>
-          <Link href="/hub/pages/playlists" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-            <MusicNoteIcon className="h-6 w-6" />
-            <span>Playlists</span>
+          <Link href="/hub/pages/playlists">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <MusicNoteIcon className="h-6 w-6" />
+              Playlists
+            </p>
           </Link>
-          <Link href="/hub/pages/groupes" className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-            <UserGroupIcon className="h-6 w-6" />
-            <span>Groupes</span>
+          <Link href="/hub/pages/groupes">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <UserGroupIcon className="h-6 w-6" />
+              Groupes
+            </p>
           </Link>
-          <button className="mt-auto flex items-center gap-3 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700" onClick={handleLogout}>
-        <LogoutIcon className="h-6 w-6" />
-        <span>Déconnexion</span>
-      </button>
+          <Link href="/hub/pages/groupes">
+            <p className="flex items-center gap-3 rounded-lg bg-red-600 px-4 py-2 transition-colors hover:bg-red-700">
+              <LogoutIcon className="h-6 w-6" />
+              Déconnexion
+            </p>
+          </Link>
         </nav>
       </div>
-      {currentTrack && (
-        <div className="self-center w-full bg-gray-700 p-4 rounded-lg text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold">{currentTrack.title}</p>
-              <p className="text-xs">{currentTrack.artist}</p>
+      <div>
+        
+        {currentTrack && (
+          <div className="mt-4 w-full bg-gray-700 p-4 rounded-lg text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold">{currentTrack.title}</p>
+                <p className="text-xs">{currentTrack.artist}</p>
+              </div>
             </div>
           </div>
+        )}
+        <div className="mt-4 text-center text-white">
+          <p>Votre humeur du jour :</p>
+          {userMood}
         </div>
-      )}
-      <div className="mt-4 text-center text-black">
-        Votre humeur du jour<br/>
-        {userMood}
       </div>
-      <div className="mt-4 text-center text-black">
-      </div>
-      
-      <button className="fixed bottom-4 left-4 bg-gray-600 p-2 rounded-full text-white hover:bg-gray-700" onClick={toggleSidebar}>
-        {isSidebarOpen ? <ChevronLeftIcon className="h-6 w-6" /> : <ChevronRightIcon className="h-6 w-6" />}
-      </button>
     </div>
   );
 }

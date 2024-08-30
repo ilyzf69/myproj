@@ -1,61 +1,36 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { db, auth } from '../app/firebaseConfig';
-import logoYT from '../image/youtube.png';
-import logoSP from '../image/spotify.png';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import getSpotifyAccessToken from './spotifyService';
 import { onAuthStateChanged } from "firebase/auth";
-import { HeartIcon, PauseIcon, SearchIcon, ShareIcon } from '@heroicons/react/solid';
+import { HeartIcon, PlayIcon, SearchIcon, ShareIcon } from '@heroicons/react/solid';
+import { useMusicPlayer } from '../context/MusicPlayerContext';
 
 interface Track {
   id: string;
   title: string;
-  channelTitle: string;
+  artist: string;
   thumbnailUrl: string;
   videoId: string;
   source: string;
   isFavorite: boolean;
+  url: string;
 }
 
-const YouTubePlayer = ({ videoId }: { videoId: string }) => {
-  const videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-  return (
-    <iframe
-      width="100%"
-      height="400px"
-      src={videoSrc}
-      frameBorder="0"
-      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    ></iframe>
-  );
-};
-
-const SpotifyPlayer = ({ trackId }: { trackId: string }) => {
-  const embedSrc = `https://open.spotify.com/embed/track/${trackId}`;
-  return (
-    <iframe
-      src={embedSrc}
-      width="100%"
-      height="400px"
-      frameBorder="0"
-      allowTransparency
-      allow="encrypted-media"
-    ></iframe>
-  );
-};
-
-export default function ActivityFeed() {
+const ActivityFeed = ({ userMood }: { userMood: string }) => {
+  const { setCurrentTrack, setIsPlaying } = useMusicPlayer();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [source, setSource] = useState('all');
+  const [recommendedTracks, setRecommendedTracks] = useState<Track[]>([]);
+  const [emotionTracks, setEmotionTracks] = useState<Track[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [showPlaylistDialog, setShowPlaylistDialog] = useState<boolean>(false);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showShareDialog, setShowShareDialog] = useState<boolean>(false);
-  const [source, setSource] = useState('all');
-  const [userId, setUserId] = useState<string | null>(null);
   const [groups, setGroups] = useState<any[]>([]);
 
   useEffect(() => {
@@ -77,6 +52,13 @@ export default function ActivityFeed() {
       fetchTracks();
     }
   }, [searchTerm, source]);
+
+  useEffect(() => {
+    fetchRecommendedTracks();
+    if (userMood) {
+      fetchEmotionTracks(userMood);
+    }
+  }, [userMood]);
 
   const fetchTracks = async () => {
     setTracks([]);
@@ -104,11 +86,12 @@ export default function ActivityFeed() {
       const fetchedTracks = response.data.items.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
-        channelTitle: item.snippet.channelTitle,
+        artist: item.snippet.channelTitle,
         thumbnailUrl: item.snippet.thumbnails.default.url,
         videoId: item.id.videoId,
         source: 'youtube',
         isFavorite: false,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
       }));
 
       setTracks(fetchedTracks);
@@ -134,11 +117,12 @@ export default function ActivityFeed() {
       const fetchedTracks = response.data.tracks.items.map((item: any) => ({
         id: item.id,
         title: item.name,
-        channelTitle: item.artists[0].name,
+        artist: item.artists[0].name,
         thumbnailUrl: item.album.images[0].url,
         videoId: item.id,
         source: 'spotify',
         isFavorite: false,
+        url: item.external_urls.spotify,
       }));
 
       setTracks(fetchedTracks);
@@ -172,6 +156,26 @@ export default function ActivityFeed() {
     const groupsSnapshot = await getDocs(groupsCollection);
     const fetchedGroups = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setGroups(fetchedGroups);
+  };
+
+  const fetchRecommendedTracks = async () => {
+    try {
+      // Exemple de requête pour obtenir les recommandations (remplacez par votre propre logique/API)
+      const response = await axios.get('/api/recommended');
+      setRecommendedTracks(response.data);
+    } catch (error) {
+      console.error('Error fetching recommended tracks:', error);
+    }
+  };
+
+  const fetchEmotionTracks = async (emotion: string) => {
+    try {
+      // Exemple de requête pour obtenir les musiques basées sur les émotions (remplacez par votre propre logique/API)
+      const response = await axios.get(`/api/emotions?emotion=${emotion}`);
+      setEmotionTracks(response.data);
+    } catch (error) {
+      console.error('Error fetching emotion tracks:', error);
+    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -252,44 +256,56 @@ export default function ActivityFeed() {
     }
   };
 
+  const playTrack = (track: Track) => {
+    setCurrentTrack(track);
+    setIsPlaying(true);
+  };
+
   return (
-    <div className="app bg-gray-100 p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-      <div className="search-bar mb-6 flex items-center">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="Recherchez des titres, artistes, humeurs..."
-          className="w-full p-3 rounded text-gray-900 border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
-        />
-        <SearchIcon className="w-8 h-8 text-gray-500 ml-4" />
-      </div>
-      <div className="source-buttons mb-6 flex justify-around">
-        <button
-          onClick={() => setSource('all')}
-          className={`p-2 rounded-full ${source === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
-        >
-        </button>
-        <button
-          onClick={() => setSource('youtube')}
-          className={`p-2 rounded-full ${source === 'youtube' ? 'bg-blue-500' : 'bg-gray-200'}`}
-        >
-          <img src={logoYT.src} alt="YouTube" className="h-12 w-12" />
-        </button>
-        <button
-          onClick={() => setSource('spotify')}
-          className={`p-2 rounded-full ${source === 'spotify' ? 'bg-blue-500' : 'bg-gray-200'}`}
-        >
-          <img src={logoSP.src} alt="Spotify" className="h-12 w-12" />
-        </button>
-      </div>
-      <div className="track-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tracks.map((track) => (
-          <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
-            <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
-            <div className="flex-1">
-              <p className="font-bold text-gray-900">{track.title} - {track.channelTitle}</p>
+    <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div className="w-full max-w-4xl">
+        <div className="search-bar mb-6 flex items-center">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Recherchez des titres, artistes, humeurs..."
+            className="w-full p-3 rounded text-gray-900 border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+          />
+          <SearchIcon className="w-8 h-8 text-gray-500 ml-4" />
+        </div>
+        <div className="source-buttons mb-6 flex justify-around">
+          <button
+            onClick={() => setSource('youtube')}
+            className={`p-2 rounded-full ${source === 'youtube' ? 'bg-blue-500' : 'bg-gray-200'}`}
+          >
+            YouTube
+          </button>
+          <button
+            onClick={() => setSource('spotify')}
+            className={`p-2 rounded-full ${source === 'spotify' ? 'bg-blue-500' : 'bg-gray-200'}`}
+          >
+            Spotify
+          </button>
+          <button
+            onClick={() => setSource('all')}
+            className={`p-2 rounded-full ${source === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
+          >
+            Tous
+          </button>
+        </div>
+        <div className="track-list grid grid-cols-1 md:grid-cols-2 gap-6">
+          {tracks.map((track) => (
+            <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
+              <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
+              <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
               <div className="flex space-x-2 mt-2">
+                <button
+                  className="p-1 rounded bg-green-500 text-white"
+                  onClick={() => playTrack(track)}
+                >
+                  <PlayIcon className="w-6 h-6" />
+                </button>
                 <button
                   className={`p-1 rounded ${track.isFavorite ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-900'}`}
                   onClick={() => toggleFavorite(track)}
@@ -297,21 +313,59 @@ export default function ActivityFeed() {
                   <HeartIcon className="w-6 h-6" />
                 </button>
                 <button
-                  className="p-1 rounded bg-green-500 text-white"
+                  className="p-1 rounded bg-blue-500 text-white"
                   onClick={() => selectTrackToAdd(track)}
                 >
-                  <PauseIcon className="w-6 h-6" />
+                  Ajouter à Playlist
                 </button>
                 <button
-                  className="p-1 rounded bg-blue-500 text-white"
+                  className="p-1 rounded bg-purple-500 text-white"
                   onClick={() => shareTrack(track)}
                 >
                   <ShareIcon className="w-6 h-6" />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <h2 className="text-2xl font-bold mt-8 mb-4">Actualités musicales</h2>
+        <div className="recommended-tracks grid grid-cols-1 md:grid-cols-2 gap-6">
+          {recommendedTracks.map((track) => (
+            <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
+              <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
+              <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
+              <div className="flex space-x-2 mt-2">
+                <button
+                  className="p-1 rounded bg-green-500 text-white"
+                  onClick={() => playTrack(track)}
+                >
+                  <PlayIcon className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {userMood && (
+          <>
+            <h2 className="text-2xl font-bold mt-8 mb-4">Musiques pour {userMood}</h2>
+            <div className="emotion-tracks grid grid-cols-1 md:grid-cols-2 gap-6">
+              {emotionTracks.map((track) => (
+                <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
+                  <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
+                  <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
+                  <div className="flex space-x-2 mt-2">
+                    <button
+                      className="p-1 rounded bg-green-500 text-white"
+                      onClick={() => playTrack(track)}
+                    >
+                      <PlayIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
       {selectedTrack && showPlaylistDialog && (
         <div className="playlist-dialog fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -327,7 +381,7 @@ export default function ActivityFeed() {
                 </button>
               ))
             ) : (
-              <p className="text-red-500">Aucune playlist trouvée. Veuillez en créer une dabord.</p>
+              <p className="text-red-500">Aucune playlist trouvée. Veuillez en créer une d'abord.</p>
             )}
             <button onClick={() => setShowPlaylistDialog(false)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full">
               Fermer
@@ -354,7 +408,7 @@ export default function ActivityFeed() {
               }}
               className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 w-full"
             >
-              Partager à lextérieur de lapplication
+              Partager à l'extérieur de l'application
             </button>
             <div className="my-2"></div>
             <button
@@ -368,4 +422,6 @@ export default function ActivityFeed() {
       )}
     </div>
   );
-}
+};
+
+export default ActivityFeed;

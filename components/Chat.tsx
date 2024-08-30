@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 
 const ChatPopup = () => {
@@ -36,7 +35,7 @@ const ChatPopup = () => {
   };
 
   return (
-    <div className="fixed bottom-0 right-0 m-4 max-w-md">
+    <div className="fixed top-0 right-0 m-4 max-w-md">
       <button
         className="w-16 h-16 bg-blue-500 text-white rounded-full cursor-pointer flex items-center justify-center"
         onClick={() => setIsOpen(!isOpen)}
@@ -44,7 +43,7 @@ const ChatPopup = () => {
         {isOpen ? 'CHAT' : 'CHAT'}
       </button>
       {isOpen && (
-        <div className="bg-white shadow-xl rounded-lg overflow-hidden">
+        <div className="bg-white shadow-xl rounded-lg overflow-hidden mt-2">
           <div className="p-4 max-h-80 overflow-auto">
             {messages.map((msg, index) => (
               <div key={index} className={`text-sm p-2 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
