@@ -85,6 +85,13 @@ const Register: React.FC = () => {
               >
                 Inscription
               </button>
+              <button
+                className="px-6 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:outline-none rounded transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-110"
+                type="button"
+                onClick={() => window.location.href = "/"}
+              >
+                Retour
+              </button>
             </div>
           </div>
         </form>

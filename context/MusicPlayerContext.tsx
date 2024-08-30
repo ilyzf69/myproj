@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 type Music = {
+  url: string | undefined;
   source: string;
   videoId: string;
   id: string;

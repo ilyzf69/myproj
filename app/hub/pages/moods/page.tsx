@@ -1,5 +1,4 @@
 "use client";
-// moods/page.tsx
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
@@ -7,13 +6,12 @@ import ChatPopup from '../../../../components/Chat';
 import SadVideo from '../../../videos/SadVideo';
 import LoveVideo from '../../../videos/LoveVideo';
 import HappyVideo from '../../../videos/HappyVideo';
-import EnergeticVideo from '../../../videos/EnergeticVideo'; // Importer le composant SadVideo
+import EnergeticVideo from '../../../videos/EnergeticVideo';
 import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon } from '@heroicons/react/solid';
 import { db, auth } from '../../../firebaseConfig';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-// Définition des émotions avec leurs icônes et leurs "moods"
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️' },
   { icon: EmojiHappyIcon, name: 'Joyeux', mood: '😀' },
@@ -51,7 +49,6 @@ const HumeurPage: React.FC = () => {
     }
   };
 
-  // Fonction pour obtenir le composant vidéo approprié en fonction de l'émotion sélectionnée
   const getBackgroundVideo = () => {
     switch (selectedEmotion) {
       case '😢':
@@ -62,34 +59,34 @@ const HumeurPage: React.FC = () => {
         return <HappyVideo />;
       case '⚡':
         return <EnergeticVideo />;
-      // Ajoutez d'autres cas pour chaque émotion avec le composant vidéo correspondant
       default:
-        return null; // Retournez null si aucune émotion n'est sélectionnée ou si aucune vidéo n'est disponible
+        return null;
     }
   };
 
   return (
-    <div className="relative flex h-screen">
-      {/* Affichez le composant vidéo approprié en arrière-plan */}
+    <div className="relative flex h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
       {getBackgroundVideo()}
       <div className="absolute inset-0 z-10 flex flex-col w-full">
-        <Sidebar />
-        <div className="flex-1 flex flex-col items-center">
-          <h1 className="text-2xl font-bold text-center mt-10">Comment vous sentez-vous aujourdhui ?</h1>
+        <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-20 shadow-lg">
+          <Sidebar />
+        </div>
+        <div className="flex-1 flex flex-col items-center p-10 ml-64">
+          <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Comment vous sentez-vous aujourd'hui ?</h1>
           <div className="flex justify-center mt-5 flex-wrap">
             {emotions.map(({ icon: Icon, name, mood }) => (
               <button
                 key={mood}
                 onClick={() => handleEmotionSelect(mood)}
-                className={`m-2 p-2 rounded-lg flex flex-col items-center justify-center ${selectedEmotion === mood ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`m-2 p-4 rounded-full flex flex-col items-center justify-center transition duration-300 ease-in-out ${selectedEmotion === mood ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                <Icon className="w-10 h-10 mb-1" />
-                {name}
+                <Icon className="w-12 h-12 mb-2" />
+                <span className="text-lg font-semibold">{name}</span>
               </button>
             ))}
           </div>
           <Link href="/hub">
-            <p className="mt-10 p-4 bg-purple-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center">
+            <p className="mt-10 p-4 bg-purple-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
               Retour au Hub
             </p>
           </Link>

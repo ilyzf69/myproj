@@ -110,7 +110,7 @@ const MusicBar: React.FC = () => {
   }, [intervalId]);
 
   return (
-    <div className="bg-gray-800 text-white p-4 w-full flex flex-col items-center justify-between">
+    <div className="bg-[#04060a] text-white p-4 w-full flex flex-col items-center justify-between">
       <audio onEnded={() => setIsPlaying(false)} />
       <div className="flex items-center justify-center mb-2">
         <p className="text-sm font-semibold">

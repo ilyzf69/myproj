@@ -1,13 +1,15 @@
 "use client";
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
-import ChatPopup from '../../../../components/Chat';
-import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon } from '@heroicons/react/solid';
-import { MusicPlayerContext } from '../../../../context/MusicPlayerContext';
-import { db } from '../../../firebaseConfig';
-import { doc, setDoc, deleteDoc, getDocs, collection } from 'firebase/firestore';
+import { HeartIcon } from '@heroicons/react/solid';
+import { db, auth } from '../../../firebaseConfig';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import axios from 'axios';
+import MusicBar from '../../../../components/MusicBar';
+import { onAuthStateChanged } from "firebase/auth";
+import { useMusicPlayer } from '../../../../context/MusicPlayerContext';
 
 type Music = {
   videoId: string;
@@ -16,40 +18,63 @@ type Music = {
   artist: string;
   thumbnailUrl: string;
   isFavorite: boolean;
+  source: string;
+  url: string;
 };
 
-type Emotion = '❤️' | '😀' | '😢' | '⚡';
+const emotions = {
+  '❤️': 'love songs',
+  '😀': 'happy songs',
+  '😢': 'sad songs',
+  '⚡': 'energetic songs',
+};
 
-const emotions = [
-  { icon: HeartIcon, name: 'Amour', query: 'love songs' },
-  { icon: EmojiHappyIcon, name: 'Joyeux', query: 'happy songs' },
-  { icon: EmojiSadIcon, name: 'Triste', query: 'sad songs' },
-  { icon: LightningBoltIcon, name: 'Énergique', query: 'energetic songs' },
-];
-
-const MoodsPage: React.FC = () => {
-  const [selectedEmotion, setSelectedEmotion] = useState<Emotion | null>(null);
+const DiscoverPage: React.FC = () => {
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const [musics, setMusics] = useState<Music[]>([]);
-  const { setCurrentTrack } = useContext(MusicPlayerContext);
+  const [favorites, setFavorites] = useState<Music[]>([]);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const { setCurrentTrack, setIsPlaying } = useMusicPlayer();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedEmotion) {
-      fetchTracks(selectedEmotion);
-    }
-  }, [selectedEmotion]);
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        setUserId(user.uid);
+        fetchFavorites(user.uid);
+        const docRef = doc(db, "users", user.uid);
+        getDoc(docRef).then(docSnap => {
+          if (docSnap.exists()) {
+            const userMood = docSnap.data().mood;
+            setSelectedEmotion(userMood);
+            if (userMood) {
+              fetchTracks(userMood);
+            }
+          } else {
+            console.log("No such document!");
+          }
+        });
+      }
+    });
 
-  useEffect(() => {
-    fetchFavorites();
+    return () => unsubscribe();
   }, []);
 
-  const fetchTracks = async (emotion: Emotion) => {
-    const query = emotions.find(e => e.name === emotion)?.query || '';
+  const fetchFavorites = async (userId: string) => {
+    const favoritesCollection = collection(db, `users/${userId}/favorites`);
+    const favoritesSnapshot = await getDocs(favoritesCollection);
+    const fetchedFavorites = favoritesSnapshot.docs.map(doc => doc.data() as Music);
+    setFavorites(fetchedFavorites);
+  };
+
+  const fetchTracks = async (mood: string) => {
+    const query = emotions[mood as keyof typeof emotions];
     if (query) {
       try {
         const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
           params: {
             part: 'snippet',
-            maxResults: 10,
+            maxResults: 20,
             q: query,
             type: 'video',
             key: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY,
@@ -63,14 +88,16 @@ const MoodsPage: React.FC = () => {
           artist: 'Unknown Artist',
           thumbnailUrl: item.snippet.thumbnails.default.url,
           isFavorite: false,
+          source: 'youtube',
+          url: `https://www.youtube.com/watch?v=${item.id.videoId}`
         }));
 
-        const favoriteTracks = await getFavorites();
+        const updatedTracks = fetchedTracks.map(track => {
+          const isFav = favorites.some(fav => fav.id === track.id);
+          return { ...track, isFavorite: isFav };
+        });
 
-        setMusics(fetchedTracks.map(track => ({
-          ...track,
-          isFavorite: favoriteTracks.some(fav => fav.id === track.id),
-        })));
+        setMusics(updatedTracks);
       } catch (error) {
         console.error('Error fetching tracks:', error);
       }
@@ -78,7 +105,9 @@ const MoodsPage: React.FC = () => {
   };
 
   const toggleFavorite = async (music: Music) => {
-    const musicRef = doc(db, "favorites", music.id);
+    if (!userId) return;
+
+    const musicRef = doc(db, `users/${userId}/favorites`, music.id);
 
     try {
       if (music.isFavorite) {
@@ -88,68 +117,75 @@ const MoodsPage: React.FC = () => {
       }
 
       setMusics(musics.map(m => m.id === music.id ? { ...m, isFavorite: !m.isFavorite } : m));
+      fetchFavorites(userId);  // Refresh favorites list after adding/removing
     } catch (error) {
       console.error('Error updating favorites:', error);
     }
   };
 
-  const getFavorites = async () => {
-    const favoritesCollection = await getDocs(collection(db, "favorites"));
-    return favoritesCollection.docs.map(doc => doc.data() as Music);
+  const handlePlay = (music: Music) => {
+    setCurrentTrack(music);
+    setIsPlaying(true);
   };
 
-  const fetchFavorites = async () => {
-    try {
-      const favorites = await getFavorites();
-      setMusics(prevMusics => prevMusics.map(music => ({
-        ...music,
-        isFavorite: favorites.some(fav => fav.id === music.id),
-      })));
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-    }
+  const loadMoreTracks = () => {
+    setVisibleCount(prevCount => prevCount + 5);
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col items-center p-10">
-        <h1 className="text-4xl font-bold text-green-500 mb-5">Découvrir</h1>
-        <p className="text-xl mb-10">Explorez de nouveaux contenus et tendances.</p>
-        <div className="grid grid-cols-2 gap-5">
-          {emotions.map(({ icon: Icon, name }) => (
-            <button
-              key={name}
-              onClick={() => setSelectedEmotion(name as Emotion)}
-              className={`p-4 rounded-lg flex flex-col items-center justify-center ${
-                selectedEmotion === name ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-              } transition duration-300 ease-in-out`}
-            >
-              <Icon className="w-10 h-10 mb-2" />
-              {name}
-            </button>
-          ))}
-        </div>
-        <div className="track-list mt-8">
-          {musics.map(music => (
-            <div key={music.id} className="track-item mb-4 flex items-center">
+    <div className="flex flex-col h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+      {/* Sidebar fixée */}
+      <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-20 shadow-lg">
+        <Sidebar />
+      </div>
+
+      {/* Contenu principal */}
+      <div className="flex-1 flex flex-col items-center p-10 ml-64 overflow-y-auto">
+        <h1 className="text-5xl font-extrabold text-white mb-8">Découvrir</h1>
+        <p className="text-xl text-white mb-10">Musique basée sur votre humeur actuelle : {selectedEmotion}</p>
+        <div className="track-list mt-8 w-full max-w-4xl text-black">
+          {musics.slice(0, visibleCount).map(music => (
+            <div key={music.id} className="track-item mb-6 flex items-center bg-white shadow-md p-6 rounded-lg">
               <HeartIcon
-                className={`ml-2 h-6 w-6 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+                className={`h-8 w-8 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
                 onClick={() => toggleFavorite(music)}
               />
-              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2" style={{ width: '100px', height: 'auto' }} />
-              <p className="mr-2">{music.title}</p>
-              
+              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-4 rounded-lg" style={{ width: '80px', height: '80px' }} />
+              <div className="flex-1">
+                <p className="text-xl font-bold">{music.title}</p>
+                <p className="text-sm text-gray-500">{music.artist}</p>
+              </div>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+                onClick={() => handlePlay(music)}
+              >
+                Écouter
+              </button>
             </div>
           ))}
         </div>
+
+        {/* Bouton Voir Plus */}
+        {visibleCount < musics.length && (
+          <button
+            onClick={loadMoreTracks}
+            className="mt-10 p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
+          >
+            Voir Plus
+          </button>
+        )}
+
         <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
           <Link href="/hub">Retour au Hub</Link>
         </p>
       </div>
-      <ChatPopup />
+      
+      {/* MusicBar fixée en bas */}
+      <div className="fixed bottom-0 left-0 w-full z-30">
+        <MusicBar />
+      </div>
     </div>
   );
 };
 
-export default MoodsPage;
+export default DiscoverPage;

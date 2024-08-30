@@ -8,7 +8,7 @@ import { HeartIcon } from '@heroicons/react/solid';
 import logoYT from '../../../../image/youtube.png';
 import logoSP from '../../../../image/spotify.png';
 import { onAuthStateChanged } from "firebase/auth";
-import MusicPlayerBar from '../../../../components/MusicPlayerBar';
+import MusicBar from '../../../../components/MusicBar'; 
 
 type Music = {
   videoId: string;
@@ -18,11 +18,13 @@ type Music = {
   thumbnailUrl: string;
   isFavorite: boolean;
   source: string;
+  url: string;
 };
 
 const FavoritesPage: React.FC = () => {
   const [favorites, setFavorites] = useState<Music[]>([]);
   const [filteredFavorites, setFilteredFavorites] = useState<Music[]>([]);
+  const [visibleCount, setVisibleCount] = useState(5);
   const [filter, setFilter] = useState<string>('all');
   const { setCurrentTrack, setIsPlaying } = useMusicPlayer();
   const [userId, setUserId] = useState<string | null>(null);
@@ -71,53 +73,72 @@ const FavoritesPage: React.FC = () => {
     setIsPlaying(true);
   };
 
+  const loadMoreTracks = () => {
+    setVisibleCount(prevCount => prevCount + 5);
+  };
+
   return (
-    <div className="flex h-screen flex-col">
-      <Sidebar />
-      <div className="flex-1 flex flex-col items-center p-10 overflow-y-auto">
-        <h1 className="text-4xl font-bold text-green-500 mb-5">Mes Favoris</h1>
-        <div className="mb-4">
+    <div className="flex h-screen flex-col bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+      <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-20 shadow-lg">
+        <Sidebar />
+      </div>
+      <div className="flex-1 flex flex-col items-center p-10 overflow-y-auto ml-64">
+        <h1 className="text-5xl font-extrabold text-white mb-8">Mes Favoris</h1>
+        <div className="flex space-x-4 mb-8">
           <button
             onClick={() => setFilter('all')}
-            className={`mr-2 p-2 rounded ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+            className={`px-4 py-2 rounded-full text-lg font-semibold ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
           >
             Tous
           </button>
           <button
             onClick={() => setFilter('youtube')}
-            className={`mr-2 p-2 rounded ${filter === 'youtube' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+            className={`px-4 py-2 rounded-full text-lg font-semibold ${filter === 'youtube' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
           >
             YouTube
           </button>
           <button
             onClick={() => setFilter('spotify')}
-            className={`p-2 rounded ${filter === 'spotify' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+            className={`px-4 py-2 rounded-full text-lg font-semibold ${filter === 'spotify' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
           >
             Spotify
           </button>
         </div>
         <div className="track-list mt-8 w-full flex-1 flex flex-col items-center p-10">
-          {filteredFavorites.map(music => (
-            <div key={music.id} className="track-item mb-4 flex items-center bg-white shadow-md p-4 rounded-lg">
+          {filteredFavorites.slice(0, visibleCount).map(music => (
+            <div key={music.id} className="track-item mb-6 flex items-center bg-white shadow-md p-6 rounded-lg text-black w-full max-w-4xl">
               <HeartIcon
-                className="ml-2 h-6 w-6 cursor-pointer text-red-500"
+                className="h-8 w-8 cursor-pointer text-red-500"
                 onClick={() => removeFavorite(music.id)}
               />
-              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-2 rounded" style={{ width: '100px', height: 'auto' }} />
-              <p className="mr-2 flex-1">{music.title}</p>
-              {music.source === 'youtube' && <img src={logoYT.src} alt="YouTube" className="h-6 w-6 mr-2" />}
-              {music.source === 'spotify' && <img src={logoSP.src} alt="Spotify" className="h-6 w-6 mr-2" />}
+              <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-4 rounded" style={{ width: '80px', height: '80px' }} />
+              <div className="flex-1">
+                <p className="text-xl font-bold">{music.title}</p>
+                <p className="text-sm text-gray-500">{music.artist}</p>
+              </div>
+              {music.source === 'youtube' && <img src={logoYT.src} alt="YouTube" className="h-10 w-10 mr-4" />}
+              {music.source === 'spotify' && <img src={logoSP.src} alt="Spotify" className="h-10 w-10 mr-4" />}
               <button
-                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
                 onClick={() => handlePlay(music)}
               >
                 Écouter
               </button>
             </div>
           ))}
+          {visibleCount < filteredFavorites.length && (
+            <button
+              onClick={loadMoreTracks}
+              className="mt-10 p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
+            >
+              Voir Plus
+            </button>
+          )}
         </div>
       </div>
-      <MusicPlayerBar /> {/* Ajouter le composant MusicPlayerBar en bas */}
+      <div className="fixed bottom-0 left-0 w-full z-30">
+        <MusicBar />
+      </div>
     </div>
   );
 };

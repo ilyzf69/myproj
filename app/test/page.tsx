@@ -17,7 +17,7 @@ const Page = () => {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-8">
               Activity Feed
             </h1>
-            <ActivityFeed />
+            <ActivityFeed userMood={''} />
           </main>
         </div>
         <MusicBar />
