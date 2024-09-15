@@ -17,6 +17,7 @@ type Music = {
   thumbnailUrl: string;
   isFavorite: boolean;
   source: string;
+  url: string;  // Ajout de la propriété 'url'
 };
 
 type Playlist = {
@@ -182,7 +183,7 @@ const PlaylistsPage: React.FC = () => {
                 )) : <p className="text-gray-500">Aucune musique dans cette playlist</p>}
               </div>
             </div>
-          )) : <p className="text-white text-lg">Vous n avez aucune playlist</p>}
+          )) : <p className="text-white text-lg">Vous n'avez aucune playlist</p>}
         </div>
 
         <Link href="/hub">
