@@ -74,7 +74,7 @@ export default function Sidebar() {
               <Link href="/hub/pages/favorites">
                 <p className="flex items-center gap-4 rounded-lg bg-gray-800 bg-opacity-30 px-6 py-3 transition-all hover:bg-opacity-50 cursor-pointer">
                   <HeartIcon className="h-6 w-6" />
-                  J'aime
+                  Like
                 </p>
               </Link>
               <Link href="/hub/pages/playlists">
