@@ -48,7 +48,10 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
   }, []);
 
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTerm.trim() === '') {
+      // Si le champ de recherche est vide, vider les musiques affichées
+      setTracks([]);
+    } else {
       fetchTracks();
     }
   }, [searchTerm, source]);
@@ -160,7 +163,6 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
 
   const fetchRecommendedTracks = async () => {
     try {
-      // Exemple de requête pour obtenir les recommandations (remplacez par votre propre logique/API)
       const response = await axios.get('/api/recommended');
       setRecommendedTracks(response.data);
     } catch (error) {
@@ -170,7 +172,6 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
 
   const fetchEmotionTracks = async (emotion: string) => {
     try {
-      // Exemple de requête pour obtenir les musiques basées sur les émotions (remplacez par votre propre logique/API)
       const response = await axios.get(`/api/emotions?emotion=${emotion}`);
       setEmotionTracks(response.data);
     } catch (error) {
@@ -248,7 +249,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       const shareData = {
         title: track.title,
         text: `Écoutez cette musique : ${track.title}`,
-        url: window.location.href, // Ou toute autre URL pointant vers la musique
+        url: window.location.href,
       };
       await navigator.share(shareData);
     } catch (error) {
@@ -295,131 +296,44 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
           </button>
         </div>
         <div className="track-list grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tracks.map((track) => (
-            <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
-              <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
-              <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
-              <div className="flex space-x-2 mt-2">
-                <button
-                  className="p-1 rounded bg-green-500 text-white"
-                  onClick={() => playTrack(track)}
-                >
-                  <PlayIcon className="w-6 h-6" />
-                </button>
-                <button
-                  className={`p-1 rounded ${track.isFavorite ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-900'}`}
-                  onClick={() => toggleFavorite(track)}
-                >
-                  <HeartIcon className="w-6 h-6" />
-                </button>
-                <button
-                  className="p-1 rounded bg-blue-500 text-white"
-                  onClick={() => selectTrackToAdd(track)}
-                >
-                  Ajouter à Playlist
-                </button>
-                <button
-                  className="p-1 rounded bg-purple-500 text-white"
-                  onClick={() => shareTrack(track)}
-                >
-                  <ShareIcon className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <h2 className="text-2xl font-bold mt-8 mb-4">Actualités musicales</h2>
-        <div className="recommended-tracks grid grid-cols-1 md:grid-cols-2 gap-6">
-          {recommendedTracks.map((track) => (
-            <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
-              <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
-              <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
-              <div className="flex space-x-2 mt-2">
-                <button
-                  className="p-1 rounded bg-green-500 text-white"
-                  onClick={() => playTrack(track)}
-                >
-                  <PlayIcon className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        {userMood && (
-          <>
-            <h2 className="text-2xl font-bold mt-8 mb-4">Musiques pour {userMood}</h2>
-            <div className="emotion-tracks grid grid-cols-1 md:grid-cols-2 gap-6">
-              {emotionTracks.map((track) => (
-                <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
-                  <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
-                  <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
-                  <div className="flex space-x-2 mt-2">
-                    <button
-                      className="p-1 rounded bg-green-500 text-white"
-                      onClick={() => playTrack(track)}
-                    >
-                      <PlayIcon className="w-6 h-6" />
-                    </button>
-                  </div>
+          {tracks.length > 0 ? (
+            tracks.map((track) => (
+              <div key={track.id} className="track-item p-4 bg-white rounded-lg shadow-md flex flex-col items-start">
+                <img src={track.thumbnailUrl} alt={track.title} className="w-full h-40 object-cover rounded mb-4" />
+                <p className="font-bold text-gray-900">{track.title} - {track.artist}</p>
+                <div className="flex space-x-2 mt-2">
+                  <button
+                    className="p-1 rounded bg-green-500 text-white"
+                    onClick={() => playTrack(track)}
+                  >
+                    <PlayIcon className="w-6 h-6" />
+                  </button>
+                  <button
+                    className={`p-1 rounded ${track.isFavorite ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-900'}`}
+                    onClick={() => toggleFavorite(track)}
+                  >
+                    <HeartIcon className="w-6 h-6" />
+                  </button>
+                  <button
+                    className="p-1 rounded bg-blue-500 text-white"
+                    onClick={() => selectTrackToAdd(track)}
+                  >
+                    Ajouter à Playlist
+                  </button>
+                  <button
+                    className="p-1 rounded bg-purple-500 text-white"
+                    onClick={() => shareTrack(track)}
+                  >
+                    <ShareIcon className="w-6 h-6" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">Aucun résultat à afficher. Veuillez effectuer une recherche.</p>
+          )}
+        </div>
       </div>
-      {selectedTrack && showPlaylistDialog && (
-        <div className="playlist-dialog fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 className="mb-4">Choisissez une playlist</h3>
-            {userPlaylists.length > 0 ? (
-              userPlaylists.map((playlist) => (
-                <button key={playlist.id} onClick={() => {
-                  addToPlaylist(playlist.id, selectedTrack);
-                  setShowPlaylistDialog(false);
-                }} className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 mb-2 w-full">
-                  {playlist.name}
-                </button>
-              ))
-            ) : (
-              <p className="text-red-500">Aucune playlist trouvée. Veuillez en créer une d abord.</p>
-            )}
-            <button onClick={() => setShowPlaylistDialog(false)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full">
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-      {selectedTrack && showShareDialog && (
-        <div className="share-dialog fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 className="mb-4">Partager la musique</h3>
-            {groups.map((group) => (
-              <button key={group.id} onClick={() => {
-                shareInGroup(group.id, selectedTrack);
-                setShowShareDialog(false);
-              }} className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-700 transition duration-300 mb-2 w-full">
-                Partager dans {group.name}
-              </button>
-            ))}
-            <button
-              onClick={() => {
-                shareOutsideApp(selectedTrack);
-                setShowShareDialog(false);
-              }}
-              className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 w-full"
-            >
-              Partager à l extérieur de l application
-            </button>
-            <div className="my-2"></div>
-            <button
-              onClick={() => setShowShareDialog(false)}
-              className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -176,10 +176,10 @@ const GroupesPage: React.FC = () => {
   );
 
   return (
-    <div className="relative flex h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+    <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
       <Sidebar />
       <div className="flex-1 flex flex-col items-center p-6 ">
-        <h1 className="text-5xl font-extrabold text-white mb-8">Communauté !</h1>
+        <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Communauté !</h1>
         <div className="mb-6 w-full max-w-2xl flex">
           <input
             type="text"
@@ -195,7 +195,7 @@ const GroupesPage: React.FC = () => {
             <PlusCircleIcon className="w-6 h-6" />
           </button>
         </div>
-        <h2 className="text-4xl font-bold text-white mt-10 mb-6">Vos communautés</h2>
+        <h2 className="text-4xl font-bold text-white mt-10 mb-6 text-center">Vos communautés</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
           {joinedGroups.length > 0 ? (
             joinedGroups.map((groupName, index) => (
@@ -213,10 +213,10 @@ const GroupesPage: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-white">Vous n avez rejoint aucune communauté.</p>
+            <p className="text-white">Vous n'avez rejoint aucune communauté.</p>
           )}
         </div>
-        <h2 className="text-4xl font-bold text-white mt-10 mb-6">Groupes disponibles</h2>
+        <h2 className="text-4xl font-bold text-white mt-10 mb-6 text-center">Groupes disponibles</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl ">
           {filteredGroupes.map(({ id, name, description, members }) => (
             <div key={id} className="p-6 bg-white bg-opacity-20 rounded-lg shadow-lg flex flex-col">

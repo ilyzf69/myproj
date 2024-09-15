@@ -10,6 +10,7 @@ import axios from 'axios';
 import MusicBar from '../../../../components/MusicBar';
 import { onAuthStateChanged } from "firebase/auth";
 import { useMusicPlayer } from '../../../../context/MusicPlayerContext';
+import YouTube from 'react-youtube';
 
 type Music = {
   videoId: string;
@@ -34,8 +35,9 @@ const DiscoverPage: React.FC = () => {
   const [musics, setMusics] = useState<Music[]>([]);
   const [favorites, setFavorites] = useState<Music[]>([]);
   const [visibleCount, setVisibleCount] = useState(5);
-  const { setCurrentTrack, setIsPlaying } = useMusicPlayer();
+  const { setCurrentTrack, setIsPlaying, setTitleMusic, setThumbnailUrl } = useMusicPlayer();
   const [userId, setUserId] = useState<string | null>(null);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);  // Stocke l'ID de la vidéo actuellement jouée
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -124,8 +126,15 @@ const DiscoverPage: React.FC = () => {
   };
 
   const handlePlay = (music: Music) => {
-    setCurrentTrack(music);
+    setCurrentTrack(music);  // Définit la musique actuelle dans la MusicBar
+    setTitleMusic(music.title);  // Met à jour le titre de la musique dans la MusicBar
+    setThumbnailUrl(music.thumbnailUrl);  // Met à jour la miniature de la musique dans la MusicBar
     setIsPlaying(true);
+    setPlayingVideoId(music.videoId);  // Définir l'ID de la vidéo en lecture
+  };
+
+  const closeVideo = () => {
+    setPlayingVideoId(null);  // Ferme le lecteur YouTube
   };
 
   const loadMoreTracks = () => {
@@ -133,23 +142,38 @@ const DiscoverPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
-      {/* Sidebar fixée */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-20 shadow-lg">
+    <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+      {/* Overlay flouté si une vidéo est en lecture */}
+      {playingVideoId && (
+        <div className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center">
+          <div className="relative w-full max-w-4xl">
+            <button
+              onClick={closeVideo}
+              className="absolute top-0 right-0 m-4 text-white bg-red-600 p-2 rounded-full hover:bg-red-700"
+            >
+              Fermer
+            </button>
+            <YouTube videoId={playingVideoId} className="w-full max-w-full h-auto" />
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar fixée */} 
+      <div className={`w-full lg:w-64 text-white ${playingVideoId ? 'filter blur-sm' : ''}`}>
         <Sidebar />
       </div>
 
       {/* Contenu principal */}
-      <div className="flex-1 flex flex-col items-center p-10 ml-64 overflow-y-auto">
-        <h1 className="text-5xl font-extrabold text-white mb-8">Découvrir</h1>
-        <p className="text-xl text-white mb-10">Musique basée sur votre humeur actuelle : {selectedEmotion}</p>
-        <div className="track-list mt-8 w-full max-w-4xl text-black">
+      <div className={`flex-1 flex flex-col items-center p-4 lg:p-10 overflow-y-auto ${playingVideoId ? 'filter blur-sm' : ''}`}>
+        <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-4 lg:mb-8">Découvrir</h1>
+        <p className="text-lg lg:text-xl text-white mb-6 lg:mb-10 text-center">Musique basée sur votre humeur actuelle : {selectedEmotion}</p>
+        <div className="track-list w-full max-w-4xl text-black grid grid-cols-1 md:grid-cols-2 gap-6">
           {musics.slice(0, visibleCount).map(music => (
-            <div key={music.id} className="track-item mb-6 flex items-center bg-white shadow-md p-6 rounded-lg">
+            <div key={music.id} className="track-item bg-white p-4 rounded-lg shadow-md flex items-center">
               <HeartIcon
-                className={`h-8 w-8 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+                className={`mr-4 h-8 w-8 cursor-pointer ${music.isFavorite ? 'text-red-500' : 'text-gray-500'}`}
                 onClick={() => toggleFavorite(music)}
-              />
+              /> 
               <img src={music.thumbnailUrl} alt={music.title} className="inline-block mr-4 rounded-lg" style={{ width: '80px', height: '80px' }} />
               <div className="flex-1">
                 <p className="text-xl font-bold">{music.title}</p>
@@ -169,19 +193,21 @@ const DiscoverPage: React.FC = () => {
         {visibleCount < musics.length && (
           <button
             onClick={loadMoreTracks}
-            className="mt-10 p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
+            className="mt-6 lg:mt-10 p-3 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
           >
             Voir Plus
           </button>
         )}
 
-        <p className="mt-10 p-4 bg-green-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
-          <Link href="/hub">Retour au Hub</Link>
-        </p>
+        <Link href="/hub">
+          <p className="mt-6 lg:mt-10 p-3 bg-purple-500 text-white rounded-full shadow-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center cursor-pointer">
+            Retour au Hub
+          </p>
+        </Link>
       </div>
       
       {/* MusicBar fixée en bas */}
-      <div className="fixed bottom-0 left-0 w-full z-30">
+      <div className={`fixed bottom-0 left-0 w-full z-30 ${playingVideoId ? 'filter blur-sm' : ''}`}>
         <MusicBar />
       </div>
     </div>

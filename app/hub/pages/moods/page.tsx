@@ -68,20 +68,27 @@ const HumeurPage: React.FC = () => {
     <div className="relative flex h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
       {getBackgroundVideo()}
       <div className="absolute inset-0 z-10 flex flex-col w-full">
-        <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-20 shadow-lg">
+
           <Sidebar />
-        </div>
-        <div className="flex-1 flex flex-col items-center p-10 ml-64">
-          <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Comment vous sentez-vous aujourd hui ?</h1>
+        
+        {/* Utilisation de justify-center et items-center pour centrer le contenu verticalement et horizontalement */}
+        <div className="flex-1 flex flex-col justify-center items-center p-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-8 text-center">
+            Comment vous sentez-vous aujourd'hui ?
+          </h1>
           <div className="flex justify-center mt-5 flex-wrap">
             {emotions.map(({ icon: Icon, name, mood }) => (
               <button
                 key={mood}
                 onClick={() => handleEmotionSelect(mood)}
-                className={`m-2 p-4 rounded-full flex flex-col items-center justify-center transition duration-300 ease-in-out ${selectedEmotion === mood ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                className={`m-2 p-4 rounded-full flex flex-col items-center justify-center transition duration-300 ease-in-out ${
+                  selectedEmotion === mood
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
               >
                 <Icon className="w-12 h-12 mb-2" />
-                <span className="text-lg font-semibold">{name}</span>
+                <span className="text-lg font-semibold truncated-text">{name}</span>
               </button>
             ))}
           </div>

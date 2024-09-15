@@ -10,6 +10,9 @@ import { EmojiHappyIcon, EmojiSadIcon, HeartIcon, LightningBoltIcon } from '@her
 import { onAuthStateChanged } from 'firebase/auth';
 import MusicBar from '../../../../components/MusicBar';
 
+// Ta clé API YouTube
+const YOUTUBE_API_KEY = 'TA_CLE_API_YOUTUBE';
+
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️' },
   { icon: EmojiHappyIcon, name: 'Joyeux', mood: '😀' },
@@ -21,6 +24,7 @@ const Hub: React.FC = () => {
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const [recentNotifications, setRecentNotifications] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState<string>('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -28,9 +32,10 @@ const Hub: React.FC = () => {
         const docRef = doc(db, "users", user.uid);
         getDoc(docRef).then(docSnap => {
           if (docSnap.exists()) {
-            setSelectedEmotion(docSnap.data().mood);
-            setRecentNotifications(docSnap.data().recentNotifications || []);
-            fetchRecommendations(docSnap.data().mood);
+            const data = docSnap.data();
+            setSelectedEmotion(data.mood);
+            setRecentNotifications(data.recentNotifications || []);
+            fetchRecommendations(data.mood); // Appel à la fonction de recommandation
           } else {
             console.log("No such document!");
           }
@@ -41,75 +46,79 @@ const Hub: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const fetchRecommendations = (mood: string | null) => {
-    // Logic to fetch recommendations based on mood.
-    if (mood) {
-      setRecommendations([
-        "Recommandation 1",
-        "Recommandation 2",
-        "Recommandation 3",
-      ]);
+  const fetchRecommendations = async (mood: string | null) => {
+    if (!mood) return;
+
+    let query = '';
+    switch (mood) {
+      case '❤️':
+        query = 'chansons d\'amour';
+        break;
+      case '😀':
+        query = 'musique joyeuse';
+        break;
+      case '😢':
+        query = 'musique triste';
+        break;
+      case '⚡':
+        query = 'musique énergique';
+        break;
+      default:
+        query = 'musique populaire';
+    }
+
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}&maxResults=5`
+      );
+      const data = await response.json();
+      const videoRecommendations = data.items.map((item: any) => `https://www.youtube.com/watch?v=${item.id.videoId}`);
+      setRecommendations(videoRecommendations);
+    } catch (error) {
+      console.error('Error fetching YouTube recommendations:', error);
     }
   };
 
+  const handleFeedbackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFeedback(e.target.value);
+  };
+
   const handleFeedbackSubmit = () => {
-    // Logic to handle feedback submission
-    alert("Merci pour votre feedback !");
+    if (feedback.trim()) {
+      alert("Merci pour votre feedback !");
+      setFeedback(''); // Clear the textarea after submission
+    } else {
+      alert("Veuillez entrer un commentaire avant d'envoyer.");
+    }
   };
 
   return (
-    <div className="relative flex h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+    <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 text-white shadow-lg">
+      <div className="w-full lg:w-64 bg-gray-800 text-white shadow-lg">
         <Sidebar />
       </div>
 
       {/* Main content area */}
       <div className="relative z-10 flex-1 p-4 lg:p-8 overflow-y-auto">
         <div className="flex justify-center items-center flex-col">
-          <h1 className="text-5xl font-extrabold text-white mb-8">Votre Hub</h1>
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-8 text-center">Votre Hub</h1>
           <ActivityFeed userMood={selectedEmotion || ''} />
 
           {/* Section des Recommandations musicales */}
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Recommandations basées sur votre humeur</h2>
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full mt-8 max-w-xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Recommandations basées sur votre humeur</h2>
             <ul>
-              {recommendations.map((rec, index) => (
+              {recommendations.length > 0 ? recommendations.map((rec, index) => (
                 <li key={index} className="bg-gray-100 p-2 rounded-lg mb-2">
-                  {rec}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Section des Notifications récentes */}
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Notifications récentes</h2>
-            <ul>
-              {recentNotifications.length > 0 ? recentNotifications.map((notification, index) => (
-                <li key={index} className="bg-gray-100 p-2 rounded-lg mb-2">
-                  {notification}
+                  <a href={rec} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {`Recommandation ${index + 1}`}
+                  </a>
                 </li>
               )) : (
-                <p className="text-gray-600">Aucune nouvelle notification.</p>
+                <p className="text-gray-600">Aucune recommandation disponible pour le moment.</p>
               )}
             </ul>
-          </div>
-
-          {/* Section de Feedback */}
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Votre avis nous intéresse</h2>
-            <textarea
-              className="w-full p-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
-              rows={3}
-              placeholder="Laissez vos commentaires ici..."
-            />
-            <button
-              onClick={handleFeedbackSubmit}
-              className="mt-4 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
-            >
-              Envoyer
-            </button>
           </div>
         </div>
       </div>
@@ -117,10 +126,11 @@ const Hub: React.FC = () => {
       {/* Music bar at the bottom */}
       <div className="fixed bottom-0 left-0 w-full z-20 bg-gray-900">
         <MusicBar />
+        <ChatPopup />
       </div>
 
       {/* Chat popup */}
-      <ChatPopup />
+      
     </div>
   );
 };

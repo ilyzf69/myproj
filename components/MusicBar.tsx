@@ -1,57 +1,42 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
-import { PlayIcon, PauseIcon, RewindIcon, FastForwardIcon, VolumeUpIcon, VolumeOffIcon, RefreshIcon } from '@heroicons/react/solid';
+import { PlayIcon, PauseIcon, VolumeUpIcon, VolumeOffIcon } from '@heroicons/react/solid';
 import YouTube from 'react-youtube';
 
 const MusicBar: React.FC = () => {
-  const { currentTrack, isPlaying, setIsPlaying } = useMusicPlayer();
-  const [progress, setProgress] = useState(0);
-  const [volume, setVolume] = useState(100);
+  const { currentTrack, isPlaying, setIsPlaying, titleMusic, thumbnailUrl, progress, setProgress } = useMusicPlayer();
   const [player, setPlayer] = useState<any>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(100);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [intervalId, setIntervalId] = useState<any>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Configuration de YouTube
+  const opts = {
+    height: '0',
+    width: '0',
+    playerVars: {
+      autoplay: 1,
+    },
+  };
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target);
     event.target.setVolume(volume);
     setDuration(event.target.getDuration());
+    setIsPlaying(true);  // Autoplay dès que la musique est prête
   };
 
   const handlePlayPause = () => {
     if (player) {
       if (isPlaying) {
         player.pauseVideo();
-        clearInterval(intervalId);
       } else {
         player.playVideo();
-        const id = setInterval(() => {
-          setCurrentTime(player.getCurrentTime());
-          setProgress((player.getCurrentTime() / player.getDuration()) * 100);
-        }, 1000);
-        setIntervalId(id);
       }
       setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleRewind = () => {
-    if (player) {
-      const newTime = Math.max(0, player.getCurrentTime() - 10);
-      player.seekTo(newTime);
-      setCurrentTime(newTime);
-      setProgress((newTime / player.getDuration()) * 100);
-    }
-  };
-
-  const handleFastForward = () => {
-    if (player) {
-      const newTime = Math.min(player.getDuration(), player.getCurrentTime() + 10);
-      player.seekTo(newTime);
-      setCurrentTime(newTime);
-      setProgress((newTime / player.getDuration()) * 100);
     }
   };
 
@@ -67,16 +52,7 @@ const MusicBar: React.FC = () => {
     if (player) {
       const seekTime = (player.getDuration() / 100) * parseFloat(e.target.value);
       player.seekTo(seekTime);
-      setCurrentTime(seekTime);
       setProgress(parseFloat(e.target.value));
-    }
-  };
-
-  const handleRestart = () => {
-    if (player) {
-      player.seekTo(0);
-      setCurrentTime(0);
-      setProgress(0);
     }
   };
 
@@ -97,40 +73,38 @@ const MusicBar: React.FC = () => {
     return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const opts = {
-    height: '0',
-    width: '0',
-    playerVars: {
-      autoplay: 1,
-    },
-  };
-
+  // Gérer le temps de la vidéo et mettre à jour la barre de progression
   useEffect(() => {
-    return () => clearInterval(intervalId); // Clean up interval on component unmount
-  }, [intervalId]);
+    if (player) {
+      const interval = setInterval(() => {
+        if (player.getCurrentTime && player.getDuration) {
+          const current = player.getCurrentTime();
+          const duration = player.getDuration();
+          setCurrentTime(current);
+          setProgress((current / duration) * 100);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [player]);
 
   return (
-    <div className="bg-[#04060a] text-white p-4 w-full flex flex-col items-center justify-between">
-      <audio onEnded={() => setIsPlaying(false)} />
-      <div className="flex items-center justify-center mb-2">
-        <p className="text-sm font-semibold">
-          {currentTrack ? `${currentTrack.title} - ${currentTrack.artist}` : ' - '}
-        </p>
-      </div>
-      <YouTube videoId="7UgWT_H4Kp8" opts={opts} onReady={onPlayerReady} />
+    <div className="bg-gray-800 text-white p-4 w-full flex flex-col items-center justify-between">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center">
-          <button onClick={handleRewind}>
-            <RewindIcon className="w-6 h-6 text-white" />
-          </button>
-          <button onClick={handlePlayPause} className="mx-2">
+          {thumbnailUrl && <img src={thumbnailUrl} alt="thumbnail" className="h-12 w-12 mr-4" />}
+          <div>
+            <p className="text-lg font-bold">{titleMusic || 'Aucune musique en cours'}</p>
+            <p className="text-sm text-gray-400">{currentTrack?.artist || ''}</p>
+          </div>
+        </div>
+        <YouTube videoId={currentTrack?.videoId} opts={opts} onReady={onPlayerReady} />
+      </div>
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center">
+          <button onClick={handlePlayPause}>
             {isPlaying ? <PauseIcon className="w-6 h-6 text-white" /> : <PlayIcon className="w-6 h-6 text-white" />}
-          </button>
-          <button onClick={handleFastForward}>
-            <FastForwardIcon className="w-6 h-6 text-white" />
-          </button>
-          <button onClick={handleRestart} className="ml-2">
-            <RefreshIcon className="w-6 h-6 text-white" />
           </button>
         </div>
         <div className="flex-1 mx-4">
