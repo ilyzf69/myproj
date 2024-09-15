@@ -74,7 +74,7 @@ const HumeurPage: React.FC = () => {
         {/* Utilisation de justify-center et items-center pour centrer le contenu verticalement et horizontalement */}
         <div className="flex-1 flex flex-col justify-center items-center p-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-8 text-center">
-            Comment vous sentez-vous aujourd'hui ?
+            Comment vous sentez-vous aujourd hui ?
           </h1>
           <div className="flex justify-center mt-5 flex-wrap">
             {emotions.map(({ icon: Icon, name, mood }) => (
