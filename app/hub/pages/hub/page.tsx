@@ -95,7 +95,7 @@ const Hub: React.FC = () => {
   return (
     <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
       {/* Sidebar */}
-      <div className="w-full lg:w-64 bg-gray-800 text-white shadow-lg">
+      <div className="w-full lg:w-64  text-white ">
         <Sidebar />
       </div>
 
