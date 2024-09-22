@@ -162,7 +162,7 @@ const PlaylistsPage: React.FC = () => {
                 )) : <p className="text-gray-500">Aucune musique dans cette playlist</p>}
               </div>
             </div>
-          )) : <p className="text-white text-lg">Vous n'avez aucune playlist</p>}
+          )) : <p className="text-white text-lg">Vous n avez aucune playlist</p>}
         </div>
 
         <Link href="/hub">
