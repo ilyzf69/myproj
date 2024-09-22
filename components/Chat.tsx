@@ -58,7 +58,7 @@ const ChatPopup = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full p-2 border-2 border-r-0 border-gray-300 rounded-l-lg focus:outline-none"
+              className="text-black w-full p-2 border-2 border-r-0 border-gray-300 rounded-l-lg focus:outline-none"
               placeholder="Tapez votre message ici..."
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             />

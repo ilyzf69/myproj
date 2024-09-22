@@ -10,7 +10,6 @@ import axios from 'axios';
 import MusicBar from '../../../../components/MusicBar';
 import { onAuthStateChanged } from "firebase/auth";
 import { useMusicPlayer } from '../../../../context/MusicPlayerContext';
-import YouTube from 'react-youtube';
 
 type Music = {
   videoId: string;
@@ -37,7 +36,6 @@ const DiscoverPage: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(5);
   const { setCurrentTrack, setIsPlaying, setTitleMusic, setThumbnailUrl } = useMusicPlayer();
   const [userId, setUserId] = useState<string | null>(null);
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);  // Stocke l'ID de la vidéo actuellement jouée
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -130,11 +128,9 @@ const DiscoverPage: React.FC = () => {
     setTitleMusic(music.title);  // Met à jour le titre de la musique dans la MusicBar
     setThumbnailUrl(music.thumbnailUrl);  // Met à jour la miniature de la musique dans la MusicBar
     setIsPlaying(true);
-    setPlayingVideoId(music.videoId);  // Définir l'ID de la vidéo en lecture
-  };
 
-  const closeVideo = () => {
-    setPlayingVideoId(null);  // Ferme le lecteur YouTube
+    // Enregistrer les informations dans le localStorage pour persister la musique
+    localStorage.setItem("currentTrack", JSON.stringify(music));
   };
 
   const loadMoreTracks = () => {
@@ -143,28 +139,11 @@ const DiscoverPage: React.FC = () => {
 
   return (
     <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
-      {/* Overlay flouté si une vidéo est en lecture */}
-      {playingVideoId && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center">
-          <div className="relative w-full max-w-4xl">
-            <button
-              onClick={closeVideo}
-              className="absolute top-0 right-0 m-4 text-white bg-red-600 p-2 rounded-full hover:bg-red-700"
-            >
-              Fermer
-            </button>
-            <YouTube videoId={playingVideoId} className="w-full max-w-full h-auto" />
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar fixée */} 
-      <div className={`w-full lg:w-64 text-white ${playingVideoId ? 'filter blur-sm' : ''}`}>
-        <Sidebar />
-      </div>
+      {/* Sidebar fixée */}
+      <Sidebar />
 
       {/* Contenu principal */}
-      <div className={`flex-1 flex flex-col items-center p-4 lg:p-10 overflow-y-auto ${playingVideoId ? 'filter blur-sm' : ''}`}>
+      <div className="flex-1 flex flex-col items-center p-4 lg:p-10 overflow-y-auto">
         <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-4 lg:mb-8">Découvrir</h1>
         <p className="text-lg lg:text-xl text-white mb-6 lg:mb-10 text-center">Musique basée sur votre humeur actuelle : {selectedEmotion}</p>
         <div className="track-list w-full max-w-4xl text-black grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -207,7 +186,7 @@ const DiscoverPage: React.FC = () => {
       </div>
       
       {/* MusicBar fixée en bas */}
-      <div className={`fixed bottom-0 left-0 w-full z-30 ${playingVideoId ? 'filter blur-sm' : ''}`}>
+      <div className="fixed bottom-0 left-0 w-full z-30">
         <MusicBar />
       </div>
     </div>

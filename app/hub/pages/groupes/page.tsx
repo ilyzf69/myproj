@@ -1,5 +1,6 @@
 "use client";
 
+import { getAuth } from "firebase/auth";
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ import {
 import {
   onAuthStateChanged
 } from "firebase/auth";
+import MusicBar from '../../../../components/MusicBar'; // Import de la MusicBar
 
 const GroupesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -155,7 +157,19 @@ const GroupesPage: React.FC = () => {
       const memberIds = groupSnap.data().members || [];
       const memberPromises = memberIds.map((memberId: string) => getDoc(doc(db, "users", memberId)));
       const memberDocs = await Promise.all(memberPromises);
-      const fetchedMembers = memberDocs.map(docSnap => docSnap.data());
+      
+      const fetchedMembers = memberDocs
+        .map(docSnap => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const email = data?.email || "Membre inconnu";
+            const username = email.split('@')[0]; // Récupérer la partie avant le @
+            return { ...data, username };
+          }
+          return null;
+        })
+        .filter(member => member);  // Filtrer les membres valides
+
       setMembers(fetchedMembers);
     }
   };
@@ -176,9 +190,9 @@ const GroupesPage: React.FC = () => {
   );
 
   return (
-    <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+    <div className="relative flex flex-col lg:flex-row h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center p-6 ">
+      <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
         <h1 className="text-5xl font-extrabold text-white mb-8 text-center">Communauté !</h1>
         <div className="mb-6 w-full max-w-2xl flex">
           <input
@@ -213,7 +227,7 @@ const GroupesPage: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-white">Vous n avez rejoint aucune communauté.</p>
+            <p className="text-white">Vous n'avez rejoint aucune communauté.</p>
           )}
         </div>
         <h2 className="text-4xl font-bold text-white mt-10 mb-6 text-center">Groupes disponibles</h2>
@@ -267,6 +281,12 @@ const GroupesPage: React.FC = () => {
           </p>
         </Link>
       </div>
+
+      {/* MusicBar fixée en bas de la page */}
+      <div className="fixed bottom-0 left-0 w-full z-30">
+        <MusicBar />
+      </div>
+
       {showCreatePopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-black">
@@ -367,11 +387,15 @@ const GroupesPage: React.FC = () => {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto mb-4">
-              {members.map((member, index) => (
-                <div key={index} className="mb-2 p-2 rounded-lg shadow bg-gray-100">
-                  <p>{member?.email}</p>
-                </div>
-              ))}
+              {members.length > 0 ? (
+                members.map((member, index) => (
+                  <div key={index} className="mb-2 p-2 rounded-lg shadow bg-gray-100">
+                    <p>{member?.username || "Membre inconnu"}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">Aucun membre trouvé.</p>
+              )}
             </div>
           </div>
         </div>

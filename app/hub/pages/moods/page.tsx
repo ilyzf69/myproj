@@ -3,14 +3,11 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../../../components/Sidebar';
 import Link from 'next/link';
 import ChatPopup from '../../../../components/Chat';
-import SadVideo from '../../../videos/SadVideo';
-import LoveVideo from '../../../videos/LoveVideo';
-import HappyVideo from '../../../videos/HappyVideo';
-import EnergeticVideo from '../../../videos/EnergeticVideo';
 import { HeartIcon, EmojiHappyIcon, EmojiSadIcon, LightningBoltIcon } from '@heroicons/react/solid';
 import { db, auth } from '../../../firebaseConfig';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import MusicBar from '../../../../components/MusicBar';  // Import de la barre de musique
 
 const emotions = [
   { icon: HeartIcon, name: 'Amour', mood: '❤️' },
@@ -49,32 +46,15 @@ const HumeurPage: React.FC = () => {
     }
   };
 
-  const getBackgroundVideo = () => {
-    switch (selectedEmotion) {
-      case '😢':
-        return <SadVideo />;
-      case '❤️':
-        return <LoveVideo />;
-      case '😀':
-        return <HappyVideo />;
-      case '⚡':
-        return <EnergeticVideo />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="relative flex h-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
-      {getBackgroundVideo()}
       <div className="absolute inset-0 z-10 flex flex-col w-full">
-
-          <Sidebar />
+        <Sidebar />
         
         {/* Utilisation de justify-center et items-center pour centrer le contenu verticalement et horizontalement */}
         <div className="flex-1 flex flex-col justify-center items-center p-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-8 text-center">
-            Comment vous sentez-vous aujourd hui ?
+            Comment vous sentez-vous aujourdhui ?
           </h1>
           <div className="flex justify-center mt-5 flex-wrap">
             {emotions.map(({ icon: Icon, name, mood }) => (
@@ -99,6 +79,11 @@ const HumeurPage: React.FC = () => {
           </Link>
         </div>
         <ChatPopup />
+      </div>
+
+      {/* MusicBar fixée en bas de la page */}
+      <div className="fixed bottom-0 left-0 w-full z-30">
+        <MusicBar />
       </div>
     </div>
   );

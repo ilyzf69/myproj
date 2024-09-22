@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useState, useContext } from 'react';
 import { db, auth } from '../../../firebaseConfig';
-import { collection, doc, setDoc, deleteDoc, getDocs, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, getDocs, getDoc, updateDoc } from 'firebase/firestore';
 import Sidebar from '../../../../components/Sidebar';
 import { MusicPlayerContext } from '../../../../context/MusicPlayerContext';
-import { HeartIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon, ShareIcon, PlusCircleIcon } from '@heroicons/react/solid';
+import { HeartIcon, TrashIcon, PlusCircleIcon } from '@heroicons/react/solid';
 import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import MusicBar from '@/components/MusicBar';
@@ -17,21 +17,18 @@ type Music = {
   thumbnailUrl: string;
   isFavorite: boolean;
   source: string;
-  url: string;  // Ajout de la propriété 'url'
+  url: string;
 };
 
 type Playlist = {
   id: string;
   name: string;
-  musics: Music[];
+  musics: Music[]; // Musics est toujours un tableau
 };
 
 const PlaylistsPage: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [favorites, setFavorites] = useState<Music[]>([]);
   const [newPlaylistName, setNewPlaylistName] = useState('');
-  const [showFavorites, setShowFavorites] = useState<{ [key: string]: boolean }>({});
-  const [joinedGroups, setJoinedGroups] = useState<string[]>([]);
   const { setCurrentTrack } = useContext(MusicPlayerContext);
   const [user, setUser] = useState<any>(null);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
@@ -40,52 +37,31 @@ const PlaylistsPage: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        fetchPlaylists();
-        fetchFavorites(user.uid);
-        fetchJoinedGroups(user.uid);
+        await fetchPlaylists(user.uid);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const fetchPlaylists = async () => {
-    const playlistsCollection = collection(db, 'playlists');
+  const fetchPlaylists = async (userId: string) => {
+    const playlistsCollection = collection(db, `users/${userId}/playlists`);
     const playlistsSnapshot = await getDocs(playlistsCollection);
-    const fetchedPlaylists = playlistsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Playlist));
+    const fetchedPlaylists = playlistsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      // On s'assure que musics est toujours un tableau, même s'il est vide
+      return { id: doc.id, name: data.name, musics: data.musics || [] } as Playlist;
+    });
     setPlaylists(fetchedPlaylists);
-  };
-
-  const fetchFavorites = async (userId: string) => {
-    const favoritesCollection = collection(db, `users/${userId}/favorites`);
-    const favoritesSnapshot = await getDocs(favoritesCollection);
-    const fetchedFavorites = favoritesSnapshot.docs.map(doc => doc.data() as Music);
-    setFavorites(fetchedFavorites);
-  };
-
-  const fetchJoinedGroups = async (userId: string) => {
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
-    if (userDoc.exists()) {
-      setJoinedGroups(userDoc.data().joinedGroups || []);
-    }
-  };
-
-  const setCurrentMusicInDB = async (music: Music) => {
-    try {
-      await setDoc(doc(db, "musicPlayer", "currentTrack"), music);
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de la musique actuelle :", error);
-    }
   };
 
   const createPlaylist = async () => {
     if (user && newPlaylistName) {
-      const newPlaylistRef = doc(collection(db, 'playlists'));
+      const newPlaylistRef = doc(collection(db, `users/${user.uid}/playlists`));
       const newPlaylist = {
         id: newPlaylistRef.id,
         name: newPlaylistName,
-        musics: [],
+        musics: [], // Initialise toujours musics en tant que tableau vide
       };
       await setDoc(newPlaylistRef, newPlaylist);
       setPlaylists([...playlists, newPlaylist]);
@@ -95,28 +71,28 @@ const PlaylistsPage: React.FC = () => {
   };
 
   const deletePlaylist = async (playlistId: string) => {
-    const playlistRef = doc(db, 'playlists', playlistId);
+    const playlistRef = doc(db, `users/${user.uid}/playlists`, playlistId);
     await deleteDoc(playlistRef);
     setPlaylists(playlists.filter(playlist => playlist.id !== playlistId));
   };
 
   const addToPlaylist = async (playlistId: string, track: Music) => {
-    const playlistRef = doc(db, 'playlists', playlistId);
+    const playlistRef = doc(db, `users/${user.uid}/playlists`, playlistId);
     const playlistDoc = await getDoc(playlistRef);
     if (playlistDoc.exists()) {
       const playlistData = playlistDoc.data() as Playlist;
-      const updatedMusics = [...playlistData.musics, track];
+      const updatedMusics = [...(playlistData.musics || []), track]; // Assure que musics est un tableau
       await updateDoc(playlistRef, { musics: updatedMusics });
       setPlaylists(playlists.map(playlist => playlist.id === playlistId ? { ...playlist, musics: updatedMusics } : playlist));
     }
   };
 
   const removeFromPlaylist = async (playlistId: string, trackId: string) => {
-    const playlistRef = doc(db, 'playlists', playlistId);
+    const playlistRef = doc(db, `users/${user.uid}/playlists`, playlistId);
     const playlistDoc = await getDoc(playlistRef);
     if (playlistDoc.exists()) {
       const playlistData = playlistDoc.data() as Playlist;
-      const updatedMusics = playlistData.musics.filter(music => music.id !== trackId);
+      const updatedMusics = (playlistData.musics || []).filter(music => music.id !== trackId);
       await updateDoc(playlistRef, { musics: updatedMusics });
       setPlaylists(playlists.map(playlist => playlist.id === playlistId ? { ...playlist, musics: updatedMusics } : playlist));
     }
@@ -153,8 +129,14 @@ const PlaylistsPage: React.FC = () => {
                 <HeartIcon className="w-10 h-10 text-blue-500 mr-4" />
                 <div className="flex-grow">
                   <h3 className="text-xl font-semibold text-white">{playlist.name}</h3>
-                  <p className="text-white">Musiques : {playlist.musics.length}</p>
+                  <p className="text-white">Musiques : {playlist.musics?.length || 0}</p>
                 </div>
+                <button
+                  className="ml-2 bg-red-500 p-2 rounded-full hover:bg-red-700 transition"
+                  onClick={() => deletePlaylist(playlist.id)}
+                >
+                  <TrashIcon className="w-6 h-6 text-white" />
+                </button>
               </div>
               <div className="space-y-4">
                 {playlist.musics.length > 0 ? playlist.musics.map(music => (
@@ -165,25 +147,22 @@ const PlaylistsPage: React.FC = () => {
                       <p className="text-gray-500 text-sm">{music.artist}</p>
                     </div>
                     <button
+                      className="bg-blue-500 text-white p-2 rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
+                      onClick={() => setCurrentTrack(music)}
+                    >
+                      Écouter
+                    </button>
+                    <button
                       className="bg-red-500 text-white p-2 rounded-lg shadow-md hover:bg-red-600 transition duration-300"
                       onClick={() => removeFromPlaylist(playlist.id, music.id)}
                     >
                       Retirer
                     </button>
-                    <button
-                      className="bg-blue-500 text-white p-2 rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
-                      onClick={() => {
-                        setCurrentMusicInDB(music);
-                        setCurrentTrack(music);
-                      }}
-                    >
-                      Écouter
-                    </button>
                   </div>
                 )) : <p className="text-gray-500">Aucune musique dans cette playlist</p>}
               </div>
             </div>
-          )) : <p className="text-white text-lg">Vous n avez aucune playlist</p>}
+          )) : <p className="text-white text-lg">Vous n'avez aucune playlist</p>}
         </div>
 
         <Link href="/hub">
@@ -197,7 +176,7 @@ const PlaylistsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Créer une Playlist</h2>
+              <h2 className="text-black text-2xl font-bold">Créer une Playlist</h2>
               <button
                 className="text-gray-500 hover:text-gray-700 transition"
                 onClick={() => setShowCreatePopup(false)}
@@ -207,7 +186,7 @@ const PlaylistsPage: React.FC = () => {
             </div>
             <input
               type="text"
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 shadow-sm focus:outline-none focus:ring focus:border-blue-300"
+              className="text-black w-full p-3 border border-gray-300 rounded-lg mb-4 shadow-sm focus:outline-none focus:ring focus:border-blue-300"
               placeholder="Nom de la playlist"
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}

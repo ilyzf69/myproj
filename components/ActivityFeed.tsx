@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { db, auth } from '../app/firebaseConfig';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
-import getSpotifyAccessToken from './spotifyService';
 import { onAuthStateChanged } from "firebase/auth";
-import { HeartIcon, PlayIcon, SearchIcon, ShareIcon } from '@heroicons/react/solid';
+import { HeartIcon, PlayIcon, SearchIcon, ShareIcon, PlusCircleIcon } from '@heroicons/react/solid';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
+import getSpotifyAccessToken from './spotifyService';
 
 interface Track {
   id: string;
@@ -27,11 +27,12 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
   const [recommendedTracks, setRecommendedTracks] = useState<Track[]>([]);
   const [emotionTracks, setEmotionTracks] = useState<Track[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [showPlaylistDialog, setShowPlaylistDialog] = useState<boolean>(false);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showShareDialog, setShowShareDialog] = useState<boolean>(false);
   const [groups, setGroups] = useState<any[]>([]);
+  const [showSuccessPopup, setShowSuccessPopup] = useState<boolean>(false); // Pour le popup de succès
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -49,8 +50,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
-      // Si le champ de recherche est vide, vider les musiques affichées
-      setTracks([]);
+      setTracks([]); // Clear the results if search is empty
     } else {
       fetchTracks();
     }
@@ -99,7 +99,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
 
       setTracks(fetchedTracks);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Erreur lors de la récupération des données YouTube :', error);
     }
   };
 
@@ -130,7 +130,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
 
       setTracks(fetchedTracks);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Erreur lors de la récupération des données Spotify :', error);
     }
   };
 
@@ -148,9 +148,9 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
     try {
       const playlistsSnapshot = await getDocs(collection(db, `users/${userId}/playlists`));
       const playlists = playlistsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUserPlaylists(playlists);
+      setPlaylists(playlists);
     } catch (error) {
-      console.error('Error fetching user playlists:', error);
+      console.error('Erreur lors de la récupération des playlists utilisateur :', error);
     }
   };
 
@@ -166,7 +166,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       const response = await axios.get('/api/recommended');
       setRecommendedTracks(response.data);
     } catch (error) {
-      console.error('Error fetching recommended tracks:', error);
+      console.error('Erreur lors de la récupération des recommandations :', error);
     }
   };
 
@@ -175,7 +175,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       const response = await axios.get(`/api/emotions?emotion=${emotion}`);
       setEmotionTracks(response.data);
     } catch (error) {
-      console.error('Error fetching emotion tracks:', error);
+      console.error('Erreur lors de la récupération des musiques basées sur l\'émotion :', error);
     }
   };
 
@@ -189,14 +189,20 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       const playlistDoc = await getDoc(playlistRef);
       if (playlistDoc.exists()) {
         const playlistData = playlistDoc.data();
-        const updatedTracks = playlistData.tracks ? [...playlistData.tracks, track] : [track];
-        await updateDoc(playlistRef, { tracks: updatedTracks });
-        alert('Ajouté avec succès');
+        // Utilisation du champ 'musics' au lieu de 'tracks'
+        const updatedMusics = Array.isArray(playlistData.musics) ? [...playlistData.musics, track] : [track];
+        await updateDoc(playlistRef, { musics: updatedMusics });
+        // Mise à jour de l'état local après ajout à la playlist
+        setPlaylists(playlists.map(pl => pl.id === playlistId ? { ...pl, musics: updatedMusics } : pl));
+        setShowSuccessPopup(true); // Afficher le popup de succès
+        setTimeout(() => {
+          setShowSuccessPopup(false); // Masquer le popup après 2 secondes
+        }, 2000);
       } else {
-        console.error('Playlist not found');
+        console.error('Playlist introuvable');
       }
     } catch (error) {
-      console.error('Error adding track to playlist:', error);
+      console.error('Erreur lors de l\'ajout de la piste à la playlist :', error);
     }
   };
 
@@ -215,7 +221,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
         setTracks(tracks.map(t => (t.id === track.id ? { ...t, isFavorite: true } : t)));
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Erreur lors de la modification des favoris :', error);
     }
   };
 
@@ -240,7 +246,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       await setDoc(doc(db, `groups/${groupId}/messages`, `${Date.now()}`), message);
       alert('Musique partagée dans le groupe avec succès');
     } catch (error) {
-      console.error('Error sharing track in group:', error);
+      console.error('Erreur lors du partage de la musique dans le groupe :', error);
     }
   };
 
@@ -253,13 +259,26 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
       };
       await navigator.share(shareData);
     } catch (error) {
-      console.error('Error sharing track outside app:', error);
+      console.error('Erreur lors du partage externe de la musique :', error);
     }
   };
 
-  const playTrack = (track: Track) => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
+  const playTrack = async (track: Track) => {
+    // Envoi des données de la piste en cours de lecture dans la BDD pour le MusicBar
+    try {
+      await setDoc(doc(db, 'musicPlayer', 'currentTrack'), {
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        thumbnailUrl: track.thumbnailUrl,
+        url: track.url,
+        source: track.source,
+      });
+      setCurrentTrack(track);
+      setIsPlaying(true);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la musique actuelle :', error);
+    }
   };
 
   return (
@@ -329,10 +348,85 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
                 </div>
               </div>
             ))
-          ) : (
-            <p className="text-gray-500">Aucun résultat à afficher. Veuillez effectuer une recherche.</p>
-          )}
+          ) : null}
         </div>
+
+        {/* Popup de succès */}
+        {showSuccessPopup && (
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-green-500 text-white p-4 rounded-lg shadow-lg">
+              Musique bien ajoutée à la playlist
+            </div>
+          </div>
+        )}
+
+        {/* Dialogues de playlist et partage */}
+        {showPlaylistDialog && selectedTrack && (
+          <div className="playlist-dialog fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h3 className="text-black mb-4">Choisissez une playlist</h3>
+              {playlists.length > 0 ? (
+                playlists.map((playlist) => (
+                  <button key={playlist.id} onClick={() => {
+                    addToPlaylist(playlist.id, selectedTrack);
+                    setShowPlaylistDialog(false);
+                  }} className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 mb-2 w-full">
+                    {playlist.name}
+                  </button>
+                ))
+              ) : (
+                <>
+                  <p className="text-red-500 mb-4">Aucune playlist trouvée.</p>
+                  <button
+                    className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full"
+                    onClick={async () => {
+                      const newPlaylistRef = doc(collection(db, `users/${userId}/playlists`));
+                      await setDoc(newPlaylistRef, { name: 'Playlist 1', musics: [] });
+                      setPlaylists([...playlists, { id: newPlaylistRef.id, name: 'Playlist 1', musics: [] }]);
+                    }}
+                  >
+                    Créer une playlist "Playlist 1"
+                  </button>
+                </>
+              )}
+              <button onClick={() => setShowPlaylistDialog(false)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full">
+                Fermer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showShareDialog && selectedTrack && (
+          <div className="share-dialog fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h3 className="text-black mb-4">Partager la musique</h3>
+              {groups.map((group) => (
+                <button key={group.id} onClick={() => {
+                  shareInGroup(group.id, selectedTrack);
+                  setShowShareDialog(false);
+                }} className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-700 transition duration-300 mb-2 w-full">
+                  Partager dans {group.name}
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  shareOutsideApp(selectedTrack);
+                  setShowShareDialog(false);
+                }}
+                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition duration-300 w-full"
+              >
+                Partager à l extérieur de l application
+              </button>
+              <div className="my-2"></div>
+              <button
+                onClick={() => setShowShareDialog(false)}
+                className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition duration-300 w-full"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
