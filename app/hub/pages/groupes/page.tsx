@@ -227,7 +227,7 @@ const GroupesPage: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-white">Vous n'avez rejoint aucune communauté.</p>
+            <p className="text-white">Vous n avez rejoint aucune communauté.</p>
           )}
         </div>
         <h2 className="text-4xl font-bold text-white mt-10 mb-6 text-center">Groupes disponibles</h2>

@@ -385,7 +385,7 @@ const ActivityFeed = ({ userMood }: { userMood: string }) => {
                       setPlaylists([...playlists, { id: newPlaylistRef.id, name: 'Playlist 1', musics: [] }]);
                     }}
                   >
-                    Créer une playlist "Playlist 1"
+                    Créer une playlist pour nom : Playlist 1
                   </button>
                 </>
               )}

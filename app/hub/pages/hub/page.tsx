@@ -204,13 +204,13 @@ const Hub: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h3 className="mb-4">Partager cette musique</h3>
             <p className="text-gray-700 mb-4">
-              Voulez-vous partager cette musique à l'extérieur de l'application ?
+              Voulez-vous partager cette musique à l extérieur de l application ?
             </p>
             <button
               onClick={shareOutsideApp}
               className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition duration-300 w-full"
             >
-              Partager à l'extérieur de l'application
+              Partager à l extérieur de l application
             </button>
             <button
               onClick={() => setShowShareDialog(false)}
